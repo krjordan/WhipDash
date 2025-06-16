@@ -20,6 +20,14 @@ import {
 export default function Dashboard() {
 	return (
 		<div className="min-h-screen bg-background">
+			{/* Skip to main content link for keyboard navigation */}
+			<a
+				href="#main-content"
+				className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-primary text-primary-foreground px-3 py-2 rounded-md z-50"
+			>
+				Skip to main content
+			</a>
+
 			{/* Header */}
 			<header className="border-b border-border bg-card">
 				<div className="container mx-auto px-4 py-4 flex items-center justify-between">
@@ -33,6 +41,8 @@ export default function Dashboard() {
 						<Badge
 							variant="outline"
 							className="text-green-600 border-green-600"
+							role="status"
+							aria-label="Dashboard status: Live"
 						>
 							Live
 						</Badge>
@@ -42,58 +52,93 @@ export default function Dashboard() {
 			</header>
 
 			{/* Main Dashboard */}
-			<main className="container mx-auto px-4 py-8">
+			<main
+				id="main-content"
+				className="container mx-auto px-4 py-8"
+			>
 				<div className="grid gap-6">
 					{/* Stats Overview */}
-					<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-						<LiveDuration />
+					<section aria-labelledby="stats-heading">
+						<h2
+							id="stats-heading"
+							className="sr-only"
+						>
+							Dashboard Statistics Overview
+						</h2>
+						<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+							<LiveDuration />
 
-						<Card>
-							<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-								<CardTitle className="text-sm font-medium">
-									Subscriptions
-								</CardTitle>
-								<Users className="h-4 w-4 text-muted-foreground" />
-							</CardHeader>
-							<CardContent>
-								<div className="text-2xl font-bold">+2,350</div>
-								<p className="text-xs text-muted-foreground flex items-center gap-1">
-									<TrendingUp className="h-3 w-3 text-green-600" />
-									+180.1% from last month
-								</p>
-							</CardContent>
-						</Card>
+							<Card>
+								<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+									<CardTitle className="text-sm font-medium">
+										Subscriptions
+									</CardTitle>
+									<Users
+										className="h-4 w-4 text-muted-foreground"
+										aria-hidden="true"
+									/>
+								</CardHeader>
+								<CardContent>
+									<div className="text-2xl font-bold">+2,350</div>
+									<p className="text-xs text-muted-foreground flex items-center gap-1">
+										<TrendingUp
+											className="h-3 w-3 text-green-600"
+											aria-hidden="true"
+										/>
+										<span aria-label="Up 180.1 percent from last month">
+											+180.1% from last month
+										</span>
+									</p>
+								</CardContent>
+							</Card>
 
-						<Card>
-							<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-								<CardTitle className="text-sm font-medium">Sales</CardTitle>
-								<ShoppingCart className="h-4 w-4 text-muted-foreground" />
-							</CardHeader>
-							<CardContent>
-								<div className="text-2xl font-bold">+12,234</div>
-								<p className="text-xs text-muted-foreground flex items-center gap-1">
-									<TrendingUp className="h-3 w-3 text-green-600" />
-									+19% from last month
-								</p>
-							</CardContent>
-						</Card>
+							<Card>
+								<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+									<CardTitle className="text-sm font-medium">Sales</CardTitle>
+									<ShoppingCart
+										className="h-4 w-4 text-muted-foreground"
+										aria-hidden="true"
+									/>
+								</CardHeader>
+								<CardContent>
+									<div className="text-2xl font-bold">+12,234</div>
+									<p className="text-xs text-muted-foreground flex items-center gap-1">
+										<TrendingUp
+											className="h-3 w-3 text-green-600"
+											aria-hidden="true"
+										/>
+										<span aria-label="Up 19 percent from last month">
+											+19% from last month
+										</span>
+									</p>
+								</CardContent>
+							</Card>
 
-						<Card>
-							<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-								<CardTitle className="text-sm font-medium">
-									Active Now
-								</CardTitle>
-								<Activity className="h-4 w-4 text-muted-foreground" />
-							</CardHeader>
-							<CardContent>
-								<div className="text-2xl font-bold">+573</div>
-								<p className="text-xs text-muted-foreground flex items-center gap-1">
-									<TrendingDown className="h-3 w-3 text-red-600" />
-									-2% from last hour
-								</p>
-							</CardContent>
-						</Card>
-					</div>
+							<Card>
+								<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+									<CardTitle className="text-sm font-medium">
+										Active Now
+									</CardTitle>
+									<Activity
+										className="h-4 w-4 text-muted-foreground"
+										aria-hidden="true"
+									/>
+								</CardHeader>
+								<CardContent>
+									<div className="text-2xl font-bold">+573</div>
+									<p className="text-xs text-muted-foreground flex items-center gap-1">
+										<TrendingDown
+											className="h-3 w-3 text-red-600"
+											aria-hidden="true"
+										/>
+										<span aria-label="Down 2 percent from last hour">
+											-2% from last hour
+										</span>
+									</p>
+								</CardContent>
+							</Card>
+						</div>
+					</section>
 
 					{/* Recent Activity */}
 					<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
@@ -105,7 +150,11 @@ export default function Dashboard() {
 								</CardDescription>
 							</CardHeader>
 							<CardContent>
-								<div className="space-y-8">
+								<div
+									className="space-y-8"
+									role="list"
+									aria-label="Recent sales transactions"
+								>
 									{[
 										{
 											name: 'Olivia Martin',
@@ -136,6 +185,8 @@ export default function Dashboard() {
 										<div
 											key={sale.email}
 											className="flex items-center"
+											role="listitem"
+											aria-label={`Sale to ${sale.name} for ${sale.amount}`}
 										>
 											<div className="ml-4 space-y-1">
 												<p className="text-sm font-medium leading-none">
@@ -145,7 +196,12 @@ export default function Dashboard() {
 													{sale.email}
 												</p>
 											</div>
-											<div className="ml-auto font-medium">{sale.amount}</div>
+											<div
+												className="ml-auto font-medium"
+												aria-label={`Amount: ${sale.amount}`}
+											>
+												{sale.amount}
+											</div>
 										</div>
 									))}
 								</div>
@@ -163,21 +219,44 @@ export default function Dashboard() {
 								<Button
 									className="w-full"
 									variant="default"
+									aria-describedby="generate-report-desc"
 								>
 									Generate Report
 								</Button>
+								<span
+									id="generate-report-desc"
+									className="sr-only"
+								>
+									Create a comprehensive sales report for the current period
+								</span>
+
 								<Button
 									className="w-full"
 									variant="outline"
+									aria-describedby="export-data-desc"
 								>
 									Export Data
 								</Button>
+								<span
+									id="export-data-desc"
+									className="sr-only"
+								>
+									Download dashboard data as CSV or Excel file
+								</span>
+
 								<Button
 									className="w-full"
 									variant="secondary"
+									aria-describedby="view-analytics-desc"
 								>
 									View Analytics
 								</Button>
+								<span
+									id="view-analytics-desc"
+									className="sr-only"
+								>
+									Open detailed analytics and insights page
+								</span>
 							</CardContent>
 						</Card>
 					</div>
