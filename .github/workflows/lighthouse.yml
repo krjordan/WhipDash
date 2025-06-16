@@ -23,16 +23,22 @@ jobs:
         run: npm ci
 
       - name: Build application
-        run: npm run build
+        run: npm run build:ci
 
-      - name: Start application
-        run: npm start &
+      - name: Start application in background
+        run: |
+          npm run start &
+          echo $! > server.pid
         env:
           PORT: 3000
 
       - name: Wait for application to be ready
         run: |
-          timeout 60 bash -c 'until curl -f http://localhost:3000; do sleep 2; done'
+          timeout 60 bash -c 'until curl -f http://localhost:3000 > /dev/null 2>&1; do 
+            echo "Waiting for server to be ready..."
+            sleep 2
+          done'
+          echo "Server is ready!"
 
       - name: Run Lighthouse CI
         uses: treosh/lighthouse-ci-action@v12
@@ -43,3 +49,11 @@ jobs:
           runs: 1
           urls: |
             http://localhost:3000
+
+      - name: Stop server
+        if: always()
+        run: |
+          if [ -f server.pid ]; then
+            kill $(cat server.pid) || true
+            rm server.pid
+          fi
