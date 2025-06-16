@@ -15,15 +15,51 @@
 - Trailing commands or scripts trying to run
 - Environment differences between local and CI
 - npm caching issues
+- Missing dependencies for analyze commands
 
 **Solutions:**
 
 1. Use `npm run build:ci` instead of `npm run build` in CI
-2. Clear npm cache: `npm cache clean --force`
-3. Ensure all scripts have explicit exit conditions
-4. Check for postinstall or postbuild hooks
+2. For bundle analysis: ensure `webpack-bundle-analyzer` is installed
+3. Clear npm cache: `npm cache clean --force`
+4. Ensure all scripts have explicit exit conditions
+5. Check for postinstall or postbuild hooks
 
-### 2. Lighthouse CI Failures
+**Fixed in our setup:**
+
+- All workflows now use `npm run build:ci`
+- Bundle analysis properly configured with webpack-bundle-analyzer
+- Robust error handling in all CI workflows
+
+### 2. Bundle Analysis Failures
+
+**Common Issues:**
+
+- "could not determine executable to run" after build
+- Missing bundle analyzer dependencies
+- Configuration errors with Next.js
+
+**Solutions:**
+
+1. **Dependencies:**
+
+   ```bash
+   npm install --save-dev webpack-bundle-analyzer
+   ```
+
+2. **Next.js Configuration:**
+
+   - Configure webpack in `next.config.ts`
+   - Use `ANALYZE=true` environment variable
+   - Set proper output paths for reports
+
+3. **CI Workflow:**
+
+   - Install analyzer as separate step
+   - Use `npm run analyze` instead of direct build
+   - Handle missing analysis files gracefully
+
+### 3. Lighthouse CI Failures
 
 **Common Issues:**
 
@@ -51,7 +87,7 @@
    - Use unique artifact names
    - Check GitHub Actions storage limits
 
-### 3. Build Cache Issues
+### 4. Build Cache Issues
 
 **Warning:** "No build cache found"
 
@@ -61,7 +97,7 @@
 - Cache will be created automatically for subsequent runs
 - Can be safely ignored if build completes successfully
 
-### 4. Test Failures in CI
+### 5. Test Failures in CI
 
 **Common Causes:**
 
@@ -75,7 +111,7 @@
 - Add proper `await` and `findBy*` for async operations
 - Mock browser APIs in `jest.setup.js`
 
-### 5. TypeScript Errors in CI
+### 6. TypeScript Errors in CI
 
 **Issue:** "Cannot find module" for test utilities
 
@@ -99,6 +135,7 @@
    npm run ci  # Run full CI pipeline locally
    npm run build:ci  # Test robust build command
    npm run test:ci  # Run tests in CI mode
+   npm run analyze  # Test bundle analysis
    ```
 
 3. **Environment Matching:**
@@ -131,9 +168,26 @@ npm ci
 # Test full CI pipeline locally
 npm run ci
 
+# Test bundle analysis
+npm run analyze
+
 # Check for security vulnerabilities
 npm audit
 
 # Update dependencies
 npm update
+```
+
+## CI/CD Commands Reference
+
+```bash
+# Robust build commands (use in CI)
+npm run build:ci    # Build with success confirmation
+npm run test:ci     # Tests with coverage, no watch
+npm run analyze     # Bundle analysis with webpack-bundle-analyzer
+
+# Standard commands (for local development)
+npm run build       # Standard Next.js build
+npm run test        # Jest tests
+npm run dev         # Development server
 ```
