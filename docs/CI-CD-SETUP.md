@@ -34,8 +34,15 @@ This repository includes a comprehensive GitHub Actions CI/CD pipeline that auto
 **Jobs:**
 
 - **Bundle Analysis**: Analyzes build output and bundle size
-- **Lighthouse CI**: Performance, accessibility, and SEO testing
 - **Accessibility Tests**: Automated a11y testing with axe-core
+
+### 4. Lighthouse CI (`.github/workflows/lighthouse.yml`)
+
+**Triggers:** Pull requests to `main` or `develop`
+
+**Jobs:**
+
+- **Lighthouse Performance Audit**: Performance, accessibility, and SEO testing using treosh/lighthouse-ci-action
 
 ## Required Secrets
 
@@ -53,7 +60,7 @@ Add these secrets to your GitHub repository settings:
 
 ### For Lighthouse CI (Optional)
 
-- `LHCI_GITHUB_APP_TOKEN`: GitHub app token for Lighthouse CI
+- `LHCI_GITHUB_APP_TOKEN`: GitHub app token for Lighthouse CI (not required with treosh action)
 
 ## Setup Instructions
 
@@ -87,8 +94,7 @@ GitHub Actions should be enabled by default for your repository.
 
 ### 4. Configure Lighthouse CI (Optional)
 
-1. Follow the [Lighthouse CI GitHub Action setup](https://github.com/GoogleChrome/lighthouse-ci/blob/main/docs/getting-started.md#github-actions)
-2. Add the token as a GitHub secret
+The Lighthouse CI now uses the treosh/lighthouse-ci-action which works out of the box without additional setup. Results are uploaded to temporary public storage automatically.
 
 ## Local Development Commands
 
@@ -132,6 +138,7 @@ Add these to your main README.md:
 ![CI/CD](https://github.com/yourusername/yourrepo/workflows/CI%2FCD%20Pipeline/badge.svg)
 ![Deploy](https://github.com/yourusername/yourrepo/workflows/Deploy%20to%20Production/badge.svg)
 ![Code Quality](https://github.com/yourusername/yourrepo/workflows/Code%20Quality/badge.svg)
+![Lighthouse CI](https://github.com/yourusername/yourrepo/workflows/Lighthouse%20CI/badge.svg)
 ```
 
 ## Troubleshooting
@@ -157,12 +164,19 @@ Add these to your main README.md:
    - Ensure build completes successfully
 
 4. **Security audit failures**
+
    - Run `npm audit fix`
    - Update vulnerable dependencies
    - Consider using `npm audit --audit-level=moderate`
+
+5. **Lighthouse CI failing**
+   - Check if the application starts correctly with `npm start`
+   - Verify the server is accessible on port 3000
+   - Review Lighthouse CI logs for specific performance issues
 
 ### Getting Help
 
 - Check the Actions tab in your GitHub repository for detailed logs
 - Review the workflow files for configuration details
 - Check Vercel dashboard for deployment issues
+- For Lighthouse issues, check the temporary public storage links in the action output

@@ -36,34 +36,6 @@ jobs:
           path: .next/analyze/
           retention-days: 7
 
-  lighthouse:
-    name: Lighthouse CI
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20.x'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build application
-        run: npm run build
-
-      - name: Serve and test with Lighthouse
-        run: |
-          npm start &
-          sleep 10
-          npx lighthouse-ci autorun
-        env:
-          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
-
   accessibility:
     name: Accessibility Tests
     runs-on: ubuntu-latest
@@ -81,12 +53,18 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Install wait-on and axe
+        run: npm install -g wait-on @axe-core/cli
+
       - name: Build application
         run: npm run build
 
+      - name: Start server in background
+        run: npm start &
+
+      - name: Wait for server to be ready
+        run: wait-on http://localhost:3000 --timeout 60000
+
       - name: Run accessibility tests
-        run: |
-          npm start &
-          sleep 10
-          npx @axe-core/cli http://localhost:3000
+        run: axe http://localhost:3000
         continue-on-error: true
