@@ -2,9 +2,14 @@ import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
 	/* config options here */
-	webpack: (config, { isServer }) => {
-		// Bundle analyzer configuration
-		if (process.env.ANALYZE === 'true') {
+}
+
+// Only add webpack configuration when bundle analysis is enabled
+// This prevents conflicts with Turbopack in development
+if (process.env.ANALYZE === 'true') {
+	nextConfig.webpack = (config, { isServer, dev }) => {
+		// Bundle analyzer only works with webpack builds (not Turbopack)
+		if (!dev) {
 			// eslint-disable-next-line @typescript-eslint/no-require-imports
 			const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer')
 

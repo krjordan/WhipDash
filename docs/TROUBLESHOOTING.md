@@ -31,7 +31,36 @@
 - Bundle analysis properly configured with webpack-bundle-analyzer
 - Robust error handling in all CI workflows
 
-### 2. Bundle Analysis Failures
+### 2. Turbopack Webpack Warning
+
+**Symptoms:**
+
+- Warning: "Webpack is configured while Turbopack is not, which may cause problems"
+- Appears when using `--turbopack` flag in development
+
+**Cause:**
+
+- Next.js config defines webpack configuration that conflicts with Turbopack
+- Turbopack uses its own bundler, not webpack
+
+**Solution:**
+
+- Configure webpack only when needed (bundle analysis)
+- Use conditional webpack configuration based on `ANALYZE` environment variable
+- This allows Turbopack in development, webpack in production builds
+
+**Fixed in our setup:**
+
+```typescript
+// Only add webpack config when bundle analysis is enabled
+if (process.env.ANALYZE === 'true') {
+	nextConfig.webpack = (config, { isServer, dev }) => {
+		// Bundle analyzer configuration
+	}
+}
+```
+
+### 3. Bundle Analysis Failures
 
 **Common Issues:**
 
@@ -59,7 +88,7 @@
    - Use `npm run analyze` instead of direct build
    - Handle missing analysis files gracefully
 
-### 3. Lighthouse CI Failures
+### 4. Lighthouse CI Failures
 
 **Common Issues:**
 
@@ -87,7 +116,7 @@
    - Use unique artifact names
    - Check GitHub Actions storage limits
 
-### 4. Build Cache Issues
+### 5. Build Cache Issues
 
 **Warning:** "No build cache found"
 
@@ -97,7 +126,7 @@
 - Cache will be created automatically for subsequent runs
 - Can be safely ignored if build completes successfully
 
-### 5. Test Failures in CI
+### 6. Test Failures in CI
 
 **Common Causes:**
 
@@ -111,7 +140,7 @@
 - Add proper `await` and `findBy*` for async operations
 - Mock browser APIs in `jest.setup.js`
 
-### 6. TypeScript Errors in CI
+### 7. TypeScript Errors in CI
 
 **Issue:** "Cannot find module" for test utilities
 
@@ -136,6 +165,7 @@
    npm run build:ci  # Test robust build command
    npm run test:ci  # Run tests in CI mode
    npm run analyze  # Test bundle analysis
+   npm run dev  # Test development server (should have no warnings)
    ```
 
 3. **Environment Matching:**
@@ -171,6 +201,9 @@ npm run ci
 # Test bundle analysis
 npm run analyze
 
+# Test development server (should have no warnings)
+npm run dev
+
 # Check for security vulnerabilities
 npm audit
 
@@ -189,5 +222,11 @@ npm run analyze     # Bundle analysis with webpack-bundle-analyzer
 # Standard commands (for local development)
 npm run build       # Standard Next.js build
 npm run test        # Jest tests
-npm run dev         # Development server
+npm run dev         # Development server with Turbopack (no warnings)
 ```
+
+## Development vs Production
+
+- **Development:** Uses Turbopack (`--turbopack` flag) for faster builds
+- **Production/CI:** Uses webpack for builds and bundle analysis
+- **Bundle Analysis:** Only available in production builds (not compatible with Turbopack)
