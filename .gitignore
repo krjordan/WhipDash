@@ -40,3 +40,14 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# testing and coverage
+coverage/
+.nyc_output
+junit.xml
+
+# Lighthouse CI
+.lighthouseci/
+
+# Bundle analysis
+.next/analyze/

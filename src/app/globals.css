@@ -66,4 +66,75 @@
 	body {
 		@apply bg-background text-foreground;
 	}
+
+	/* Accessibility improvements */
+
+	/* Enhanced focus styles */
+	*:focus {
+		@apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+	}
+
+	/* Better focus for keyboard navigation */
+	*:focus-visible {
+		@apply outline-none ring-2 ring-primary ring-offset-2 ring-offset-background;
+	}
+
+	/* Skip link styles */
+	.sr-only {
+		@apply absolute w-px h-px p-0 -m-px overflow-hidden whitespace-nowrap border-0;
+		clip: rect(0, 0, 0, 0);
+	}
+
+	.sr-only:focus {
+		@apply static w-auto h-auto p-1 m-0 overflow-visible whitespace-normal;
+		clip: auto;
+	}
+
+	/* Reduced motion support */
+	@media (prefers-reduced-motion: reduce) {
+		*,
+		*::before,
+		*::after {
+			animation-duration: 0.01ms !important;
+			animation-iteration-count: 1 !important;
+			transition-duration: 0.01ms !important;
+			scroll-behavior: auto !important;
+		}
+	}
+
+	/* High contrast mode support */
+	@media (prefers-contrast: high) {
+		:root {
+			--border: 0 0% 20%;
+			--ring: 0 0% 20%;
+		}
+
+		.dark {
+			--border: 0 0% 80%;
+			--ring: 0 0% 80%;
+		}
+	}
+
+	/* Improve text readability */
+	p,
+	li,
+	span {
+		text-rendering: optimizeLegibility;
+	}
+
+	/* Better button focus states */
+	button:focus-visible,
+	[role='button']:focus-visible {
+		@apply ring-2 ring-primary ring-offset-2 ring-offset-background;
+	}
+
+	/* Ensure minimum touch targets */
+	button,
+	[role='button'],
+	input,
+	select,
+	textarea {
+		min-height: 44px;
+		min-width: 44px;
+	}
 }
