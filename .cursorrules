@@ -1,0 +1,27 @@
+# Commit Message Rules for Next.js
+
+- Generate Git commit messages following the Conventional Commits standard: `<type>(<scope>): <description>`.
+- Use types like `feat`, `fix`, `chore`, `docs`, `style`, `refactor`, `perf`, `test`, or `build`.
+- Scope should reflect the affected module or area (e.g., `build`, `components`, `pages`, `api`, `styles`).
+- Keep the header description concise, lowercase, and start with a verb in the past tense (e.g., `fixed`, `added`, `updated`).
+- Include a body (after a blank line) for significant changes to provide context or details useful for release notes.
+- The body should be 1-2 short sentences, focusing on what changed, why, or the user impact (e.g., "Improved performance of page rendering. Fixed a bug causing slow hydration.").
+- For the body, prioritize user-facing or stakeholder-relevant details (e.g., "Enhanced UI responsiveness" instead of "optimized React hooks").
+- If the change is internal (e.g., build or chore), the body can describe the technical improvement briefly (e.g., "Reduced bundle size by 10%.").
+- Avoid overly technical jargon in the body to make it release-note-friendly.
+- Only include a body for changes that impact functionality, performance, or user experience (e.g., new features, bug fixes, refactors).
+- Skip the body for trivial changes like typo fixes or formatting.
+- Ensure commit message bodies are clear enough to be extracted for automated changelogs or release notes.
+- Example:
+
+  ```
+  feat(pages): added dynamic routing for blog
+
+  Enabled dynamic blog post pages using Next.js getStaticPaths. Supports SEO-friendly URLs.
+  ```
+
+  ```
+  fix(api): resolved user authentication error
+
+  Fixed a bug in the login endpoint causing session timeouts. Ensures smoother user login experience.
+  ```
