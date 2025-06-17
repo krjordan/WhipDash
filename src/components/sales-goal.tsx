@@ -59,7 +59,7 @@ export function SalesGoal() {
 	}
 
 	const getProgressPercentage = (current: number, goal: number) => {
-		const percentage = Math.min((current / goal) * 100, 100)
+		const percentage = (current / goal) * 100
 		return Math.floor(percentage * 10) / 10 // One decimal place for precision
 	}
 
