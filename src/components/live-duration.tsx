@@ -38,14 +38,20 @@ export function LiveDuration() {
 	const [isStarted, setIsStarted] = React.useState(false)
 	const [isEnded, setIsEnded] = React.useState(false)
 	const [goalDuration, setGoalDuration] = React.useState(7200) // default 2 hours
-	const [salesGoal, setSalesGoal] = React.useState(250) // default $1000
 	const [showModal, setShowModal] = React.useState(false)
 	const [showConfetti, setShowConfetti] = React.useState(false)
 	const [hasReachedGoal, setHasReachedGoal] = React.useState(false)
 	const intervalRef = React.useRef<NodeJS.Timeout | null>(null)
 
-	// Use session context to sync with header
-	const { startSession, pauseSession, resumeSession, endSession } = useSession()
+	const {
+		startSession,
+		pauseSession,
+		resumeSession,
+		endSession,
+		salesGoalState,
+		setSalesGoal,
+		resetSales
+	} = useSession()
 
 	React.useEffect(() => {
 		if (isRunning && !isEnded && isStarted) {
@@ -125,6 +131,7 @@ export function LiveDuration() {
 		setShowModal(false)
 		setHasReachedGoal(false)
 		setShowConfetti(false)
+		resetSales()
 		startSession()
 	}
 
@@ -306,7 +313,7 @@ export function LiveDuration() {
 							<Input
 								id="sales-goal"
 								type="number"
-								value={salesGoal}
+								value={salesGoalState.goalAmount}
 								onChange={(e) => setSalesGoal(Number(e.target.value))}
 								placeholder="Enter sales goal"
 								min="0"

@@ -9,14 +9,9 @@ import { Button } from '@/components/ui/button'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { LiveDuration } from '@/components/live-duration'
 import { LiveStatusBadge } from '@/components/live-status-badge'
+import { SalesGoal } from '@/components/sales-goal'
 import { SessionProvider } from '@/lib/session-context'
-import {
-	TrendingUp,
-	TrendingDown,
-	Users,
-	ShoppingCart,
-	Activity
-} from 'lucide-react'
+import { TrendingUp, TrendingDown, ShoppingCart, Activity } from 'lucide-react'
 
 export default function Dashboard() {
 	return (
@@ -63,29 +58,7 @@ export default function Dashboard() {
 							<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
 								<LiveDuration />
 
-								<Card>
-									<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-										<CardTitle className="text-sm font-medium">
-											Subscriptions
-										</CardTitle>
-										<Users
-											className="h-4 w-4 text-muted-foreground"
-											aria-hidden="true"
-										/>
-									</CardHeader>
-									<CardContent>
-										<div className="text-2xl font-bold">+2,350</div>
-										<p className="text-xs text-muted-foreground flex items-center gap-1">
-											<TrendingUp
-												className="h-3 w-3 text-green-600"
-												aria-hidden="true"
-											/>
-											<span aria-label="Up 180.1 percent from last month">
-												+180.1% from last month
-											</span>
-										</p>
-									</CardContent>
-								</Card>
+								<SalesGoal />
 
 								<Card>
 									<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
