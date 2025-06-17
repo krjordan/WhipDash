@@ -38,13 +38,11 @@ export function LiveDuration() {
 	const [isStarted, setIsStarted] = React.useState(false)
 	const [isEnded, setIsEnded] = React.useState(false)
 	const [goalDuration, setGoalDuration] = React.useState(7200) // default 2 hours
-	// Remove local sales goal state - now managed in session context
 	const [showModal, setShowModal] = React.useState(false)
 	const [showConfetti, setShowConfetti] = React.useState(false)
 	const [hasReachedGoal, setHasReachedGoal] = React.useState(false)
 	const intervalRef = React.useRef<NodeJS.Timeout | null>(null)
 
-	// Use session context to sync with header
 	const {
 		startSession,
 		pauseSession,
