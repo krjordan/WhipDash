@@ -11,8 +11,20 @@ import {
 	SelectTrigger,
 	SelectValue
 } from '@/components/ui/select'
+import {
+	Dialog,
+	DialogHeader,
+	DialogTitle,
+	DialogDescription,
+	DialogFooter
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { useSession } from '@/lib/session-context'
+import { ConfettiCelebration } from '@/components/confetti-celebration'
 
 const GOAL_OPTIONS = [
+	{ value: '60', label: '1 min', seconds: 60 },
 	{ value: '900', label: '15 min', seconds: 900 },
 	{ value: '1800', label: '30 min', seconds: 1800 },
 	{ value: '3600', label: '1 hour', seconds: 3600 },
@@ -22,13 +34,21 @@ const GOAL_OPTIONS = [
 
 export function LiveDuration() {
 	const [duration, setDuration] = React.useState(0) // seconds
-	const [isRunning, setIsRunning] = React.useState(true)
+	const [isRunning, setIsRunning] = React.useState(false)
+	const [isStarted, setIsStarted] = React.useState(false)
 	const [isEnded, setIsEnded] = React.useState(false)
-	const [goalDuration, setGoalDuration] = React.useState(1800) // default 30 minutes
+	const [goalDuration, setGoalDuration] = React.useState(7200) // default 2 hours
+	const [salesGoal, setSalesGoal] = React.useState(250) // default $1000
+	const [showModal, setShowModal] = React.useState(false)
+	const [showConfetti, setShowConfetti] = React.useState(false)
+	const [hasReachedGoal, setHasReachedGoal] = React.useState(false)
 	const intervalRef = React.useRef<NodeJS.Timeout | null>(null)
 
+	// Use session context to sync with header
+	const { startSession, pauseSession, resumeSession, endSession } = useSession()
+
 	React.useEffect(() => {
-		if (isRunning && !isEnded) {
+		if (isRunning && !isEnded && isStarted) {
 			intervalRef.current = setInterval(() => {
 				setDuration((prev) => prev + 1)
 			}, 1000)
@@ -44,7 +64,15 @@ export function LiveDuration() {
 				clearInterval(intervalRef.current)
 			}
 		}
-	}, [isRunning, isEnded])
+	}, [isRunning, isEnded, isStarted])
+
+	// Check for goal completion and trigger confetti
+	React.useEffect(() => {
+		if (isStarted && !isEnded && duration >= goalDuration && !hasReachedGoal) {
+			setHasReachedGoal(true)
+			setShowConfetti(true)
+		}
+	}, [duration, goalDuration, isStarted, isEnded, hasReachedGoal])
 
 	const formatTime = (seconds: number) => {
 		const hours = Math.floor(seconds / 3600)
@@ -60,10 +88,12 @@ export function LiveDuration() {
 	}
 
 	const getProgressColor = (seconds: number) => {
-		if (seconds < 300) return 'bg-green-500' // 0-5 minutes: green
-		if (seconds < 900) return 'bg-yellow-500' // 5-15 minutes: yellow
-		if (seconds < 1800) return 'bg-orange-500' // 15-30 minutes: orange
-		return 'bg-red-500' // 30+ minutes: red
+		const progressPercentage = (seconds / goalDuration) * 100
+
+		if (progressPercentage >= 90) return 'bg-green-500' // 90-100%: green (goal achieved!)
+		if (progressPercentage >= 70) return 'bg-yellow-500' // 70-90%: yellow (getting close)
+		if (progressPercentage >= 40) return 'bg-orange-500' // 40-70%: orange (making progress)
+		return 'bg-red-500' // 0-40%: red (far from goal)
 	}
 
 	const getProgressWidth = (seconds: number) => {
@@ -83,137 +113,230 @@ export function LiveDuration() {
 		return minutes
 	}
 
+	const handleShowModal = () => {
+		setShowModal(true)
+	}
+
+	const handleStartSession = () => {
+		setDuration(0)
+		setIsStarted(true)
+		setIsRunning(true)
+		setIsEnded(false)
+		setShowModal(false)
+		setHasReachedGoal(false)
+		setShowConfetti(false)
+		startSession()
+	}
+
 	const handleTogglePause = () => {
 		if (!isEnded) {
-			setIsRunning(!isRunning)
+			const newRunningState = !isRunning
+			setIsRunning(newRunningState)
+			if (newRunningState) {
+				resumeSession()
+			} else {
+				pauseSession()
+			}
 		}
 	}
 
 	const handleEnd = () => {
 		setIsRunning(false)
-		setIsEnded(true)
+		setIsEnded(false)
+		setIsStarted(false)
+		setDuration(0)
+		setHasReachedGoal(false)
+		setShowConfetti(false)
+		endSession()
 	}
 
-	const handleRestart = () => {
-		setDuration(0)
-		setIsRunning(true)
-		setIsEnded(false)
+	const handleConfettiComplete = () => {
+		setShowConfetti(false)
 	}
 
 	return (
-		<Card>
-			<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-				<CardTitle className="text-sm font-medium">Live Duration</CardTitle>
-				<div className="flex items-center gap-2">
-					{!isEnded ? (
-						<>
-							<Button
-								variant="ghost"
-								size="sm"
-								onClick={handleTogglePause}
-								className="h-8 w-8 p-0"
-								aria-label={isRunning ? 'Pause timer' : 'Resume timer'}
-							>
-								{isRunning ? (
-									<Pause className="h-4 w-4" />
-								) : (
-									<Play className="h-4 w-4" />
-								)}
-							</Button>
-							<Button
-								variant="ghost"
-								size="sm"
-								onClick={handleEnd}
-								className="h-8 w-8 p-0"
-								aria-label="End session"
-							>
-								<Square className="h-4 w-4" />
-							</Button>
-						</>
-					) : (
-						<Button
-							variant="ghost"
-							size="sm"
-							onClick={handleRestart}
-							className="h-8 w-8 p-0"
-							aria-label="Restart session"
-						>
-							<Play className="h-4 w-4" />
-						</Button>
-					)}
-				</div>
-			</CardHeader>
-			<CardContent>
-				<div className="text-2xl font-bold">{formatTime(duration)}</div>
-				<p className="text-xs text-muted-foreground mt-1">
-					{getProgressPercentage(duration)}% of goal (
-					{getRemainingTime(duration)} min remaining)
-				</p>
-
-				{/* Goal Selector */}
-				<div className="mt-3 mb-2">
+		<>
+			<Card>
+				<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+					<CardTitle className="text-sm font-medium">Live Duration</CardTitle>
 					<div className="flex items-center gap-2">
-						<Target className="h-4 w-4 text-muted-foreground" />
-						<span className="text-xs text-muted-foreground">Goal:</span>
-						<Select
-							value={goalDuration.toString()}
-							onValueChange={(value) => setGoalDuration(parseInt(value))}
-							disabled={isRunning && !isEnded}
-						>
-							<SelectTrigger className="w-20 h-6 text-xs">
-								<SelectValue />
-							</SelectTrigger>
-							<SelectContent>
-								{GOAL_OPTIONS.map((option) => (
-									<SelectItem
-										key={option.value}
-										value={option.value}
-									>
-										{option.label}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
+						{!isStarted ? (
+							<Button
+								variant="default"
+								size="sm"
+								onClick={handleShowModal}
+								className="h-8 px-3"
+								aria-label="Start session"
+							>
+								<Play className="h-4 w-4 mr-1" />
+								Start Session
+							</Button>
+						) : (
+							<>
+								<Button
+									variant="ghost"
+									size="sm"
+									onClick={handleTogglePause}
+									className="h-8 w-8 p-0"
+									aria-label={isRunning ? 'Pause timer' : 'Resume timer'}
+								>
+									{isRunning ? (
+										<Pause className="h-4 w-4" />
+									) : (
+										<Play className="h-4 w-4" />
+									)}
+								</Button>
+								<Button
+									variant="ghost"
+									size="sm"
+									onClick={handleEnd}
+									className="h-8 w-8 p-0"
+									aria-label="End session"
+								>
+									<Square className="h-4 w-4" />
+								</Button>
+							</>
+						)}
 					</div>
-				</div>
+				</CardHeader>
+				<CardContent>
+					<div className="text-2xl font-bold">{formatTime(duration)}</div>
+					<p className="text-xs text-muted-foreground mt-1">
+						{getProgressPercentage(duration)}% of goal (
+						{getRemainingTime(duration)} min remaining)
+					</p>
 
-				{/* Progress bar */}
-				<div className="mt-2">
-					<div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
-						<span>0 min</span>
-						<span>{formatTime(goalDuration)}</span>
-					</div>
-					<div className="w-full bg-muted rounded-full h-2">
+					{/* Session Info */}
+					{isStarted && (
+						<div className="mt-3 mb-2 space-y-2">
+							<div className="flex items-center gap-2 text-xs text-muted-foreground">
+								<Target className="h-3 w-3" />
+								<span>Goal: {formatTime(goalDuration)}</span>
+							</div>
+						</div>
+					)}
+
+					{/* Progress bar */}
+					{isStarted && (
+						<div className="mt-2">
+							<div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
+								<span>0 min</span>
+								<span>{formatTime(goalDuration)}</span>
+							</div>
+							<div className="w-full bg-muted rounded-full h-2">
+								<div
+									role="progressbar"
+									aria-valuenow={getProgressPercentage(duration)}
+									aria-valuemin={0}
+									aria-valuemax={100}
+									aria-label="Session progress"
+									className={`h-2 rounded-full transition-all duration-1000 ${getProgressColor(
+										duration
+									)}`}
+									style={{ width: `${getProgressWidth(duration)}%` }}
+								/>
+							</div>
+						</div>
+					)}
+
+					{/* Status indicator */}
+					<div className="flex items-center gap-2 mt-3">
 						<div
-							role="progressbar"
-							aria-valuenow={getProgressPercentage(duration)}
-							aria-valuemin={0}
-							aria-valuemax={100}
-							aria-label="Session progress"
-							className={`h-2 rounded-full transition-all duration-1000 ${getProgressColor(
-								duration
-							)}`}
-							style={{ width: `${getProgressWidth(duration)}%` }}
+							className={`h-2 w-2 rounded-full ${
+								isEnded
+									? 'bg-gray-500'
+									: isRunning && isStarted
+									? 'bg-green-500 animate-pulse'
+									: isStarted
+									? 'bg-yellow-500'
+									: 'bg-gray-400'
+							}`}
 						/>
-					</div>
-				</div>
-
-				{/* Status indicator */}
-				<div className="flex items-center gap-2 mt-3">
-					<div
-						className={`h-2 w-2 rounded-full ${
-							isEnded
-								? 'bg-gray-500'
+						<span className="text-xs text-muted-foreground">
+							{!isStarted
+								? 'Ready to Start'
+								: isEnded
+								? 'Session Ended'
 								: isRunning
-								? 'bg-green-500 animate-pulse'
-								: 'bg-yellow-500'
-						}`}
-					/>
-					<span className="text-xs text-muted-foreground">
-						{isEnded ? 'Session Ended' : isRunning ? 'Live' : 'Paused'}
-					</span>
+								? 'Live'
+								: 'Paused'}
+						</span>
+					</div>
+				</CardContent>
+			</Card>
+
+			{/* Session Setup Modal */}
+			<Dialog
+				open={showModal}
+				onOpenChange={setShowModal}
+			>
+				<div className="space-y-6">
+					<DialogHeader>
+						<DialogTitle>Start New Session</DialogTitle>
+						<DialogDescription>
+							Set your session goals and preferences before starting.
+						</DialogDescription>
+					</DialogHeader>
+
+					<div className="space-y-4">
+						<div className="space-y-2">
+							<Label htmlFor="duration-goal">Duration Goal</Label>
+							<Select
+								value={goalDuration.toString()}
+								onValueChange={(value) => setGoalDuration(parseInt(value))}
+							>
+								<SelectTrigger>
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									{GOAL_OPTIONS.map((option) => (
+										<SelectItem
+											key={option.value}
+											value={option.value}
+										>
+											{option.label}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						</div>
+
+						<div className="space-y-2">
+							<Label htmlFor="sales-goal">Sales Goal ($)</Label>
+							<Input
+								id="sales-goal"
+								type="number"
+								value={salesGoal}
+								onChange={(e) => setSalesGoal(Number(e.target.value))}
+								placeholder="Enter sales goal"
+								min="0"
+								step="100"
+							/>
+						</div>
+					</div>
+
+					<DialogFooter>
+						<Button
+							variant="outline"
+							onClick={() => setShowModal(false)}
+						>
+							Cancel
+						</Button>
+						<Button onClick={handleStartSession}>
+							<Play className="h-4 w-4 mr-1" />
+							Start Session
+						</Button>
+					</DialogFooter>
 				</div>
-			</CardContent>
-		</Card>
+			</Dialog>
+
+			{/* Confetti celebration for goal achievement */}
+			<ConfettiCelebration
+				isActive={showConfetti}
+				onComplete={handleConfettiComplete}
+				duration={4000}
+				numberOfPieces={250}
+			/>
+		</>
 	)
 }

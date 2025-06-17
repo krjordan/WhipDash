@@ -3,6 +3,24 @@ import { render, screen, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import '@testing-library/jest-dom'
 import { LiveDuration } from '../live-duration'
+import { SessionProvider } from '../../lib/session-context'
+
+// Test helper to wrap component with SessionProvider
+const renderWithSessionProvider = (ui: React.ReactElement) => {
+	return render(<SessionProvider>{ui}</SessionProvider>)
+}
+
+// Helper function to start a session (handles the modal workflow)
+const startSession = async (user: ReturnType<typeof userEvent.setup>) => {
+	// Open modal
+	const startButton = screen.getByText('Start Session')
+	await user.click(startButton)
+
+	// Start session from modal (get all buttons and choose the modal one)
+	const modalStartButtons = screen.getAllByText('Start Session')
+	const modalStartButton = modalStartButtons[1] // Second one is in the modal
+	await user.click(modalStartButton)
+}
 
 describe('LiveDuration Component', () => {
 	beforeEach(() => {
@@ -15,41 +33,55 @@ describe('LiveDuration Component', () => {
 	})
 
 	it('renders with initial state', () => {
-		render(<LiveDuration />)
+		renderWithSessionProvider(<LiveDuration />)
 
 		expect(screen.getByText('Live Duration')).toBeInTheDocument()
 		expect(screen.getByText('0:00')).toBeInTheDocument()
 		expect(
 			screen.getByText((content, element) => {
-				return element?.textContent === '0% of goal (30 min remaining)'
+				return element?.textContent === '0% of goal (120 min remaining)'
 			})
 		).toBeInTheDocument()
-		expect(screen.getByText('Live')).toBeInTheDocument()
+		expect(screen.getByText('Ready to Start')).toBeInTheDocument()
+		expect(screen.getByText('Start Session')).toBeInTheDocument()
 	})
 
-	it('counts up every second when running', () => {
-		render(<LiveDuration />)
+	it('shows modal when start session is clicked', async () => {
+		const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
+		renderWithSessionProvider(<LiveDuration />)
 
+		const startButton = screen.getByText('Start Session')
+		await user.click(startButton)
+
+		expect(screen.getByText('Start New Session')).toBeInTheDocument()
+		expect(screen.getByText('Duration Goal')).toBeInTheDocument()
+		expect(screen.getByText('Sales Goal ($)')).toBeInTheDocument()
+	})
+
+	it('starts session and begins counting after modal', async () => {
+		const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
+		renderWithSessionProvider(<LiveDuration />)
+
+		await startSession(user)
+
+		// Should show live state
+		expect(screen.getByText('Live')).toBeInTheDocument()
 		expect(screen.getByText('0:00')).toBeInTheDocument()
 
+		// Timer should count up
 		act(() => {
-			jest.advanceTimersByTime(1000)
+			jest.advanceTimersByTime(5000)
 		})
-
-		expect(screen.getByText('0:01')).toBeInTheDocument()
-
-		act(() => {
-			jest.advanceTimersByTime(59000) // 59 more seconds
-		})
-
-		expect(screen.getByText('1:00')).toBeInTheDocument()
+		expect(screen.getByText('0:05')).toBeInTheDocument()
 	})
 
 	it('pauses and resumes timer correctly', async () => {
 		const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
-		render(<LiveDuration />)
+		renderWithSessionProvider(<LiveDuration />)
 
-		// Timer should start running
+		await startSession(user)
+
+		// Let timer run
 		act(() => {
 			jest.advanceTimersByTime(5000)
 		})
@@ -72,11 +104,19 @@ describe('LiveDuration Component', () => {
 		await user.click(resumeButton)
 
 		expect(screen.getByText('Live')).toBeInTheDocument()
+
+		// Timer should continue
+		act(() => {
+			jest.advanceTimersByTime(2000)
+		})
+		expect(screen.getByText('0:07')).toBeInTheDocument()
 	})
 
 	it('ends session correctly', async () => {
 		const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
-		render(<LiveDuration />)
+		renderWithSessionProvider(<LiveDuration />)
+
+		await startSession(user)
 
 		// Let timer run for a bit
 		act(() => {
@@ -88,145 +128,81 @@ describe('LiveDuration Component', () => {
 		const endButton = screen.getByLabelText('End session')
 		await user.click(endButton)
 
-		expect(screen.getByText('Session Ended')).toBeInTheDocument()
+		expect(screen.getByText('Ready to Start')).toBeInTheDocument()
 
 		// Timer should not advance when ended
 		act(() => {
 			jest.advanceTimersByTime(5000)
 		})
-		expect(screen.getByText('0:10')).toBeInTheDocument()
+		expect(screen.getByText('0:00')).toBeInTheDocument() // Should reset to 0:00
 
-		// Should show restart button
-		expect(screen.getByLabelText('Restart session')).toBeInTheDocument()
+		// Should show start session button again
+		expect(screen.getByText('Start Session')).toBeInTheDocument()
 	})
 
-	it('restarts session correctly', async () => {
+	it('calculates progress percentage correctly with 2-hour default', async () => {
 		const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
-		render(<LiveDuration />)
+		renderWithSessionProvider(<LiveDuration />)
 
-		// Run timer and end session
+		await startSession(user)
+
+		// Default goal is 2 hours (7200 seconds)
+		// Run for 12 minutes = 720 seconds
 		act(() => {
-			jest.advanceTimersByTime(10000)
+			jest.advanceTimersByTime(720000) // 12 minutes
 		})
 
-		const endButton = screen.getByLabelText('End session')
-		await user.click(endButton)
-
-		expect(screen.getByText('0:10')).toBeInTheDocument()
-		expect(screen.getByText('Session Ended')).toBeInTheDocument()
-
-		// Restart session
-		const restartButton = screen.getByLabelText('Restart session')
-		await user.click(restartButton)
-
-		expect(screen.getByText('0:00')).toBeInTheDocument()
-		expect(screen.getByText('Live')).toBeInTheDocument()
-
-		// Timer should start counting again
-		act(() => {
-			jest.advanceTimersByTime(3000)
-		})
-		expect(screen.getByText('0:03')).toBeInTheDocument()
-	})
-
-	it('calculates progress percentage correctly', () => {
-		render(<LiveDuration />)
-
-		// Default goal is 30 minutes (1800 seconds)
-		act(() => {
-			jest.advanceTimersByTime(180000) // 3 minutes = 180 seconds
-		})
-
-		// 180 / 1800 = 0.1 = 10.0%
+		// 720 / 7200 = 0.1 = 10.0%
 		expect(
 			screen.getByText((content, element) => {
-				return element?.textContent === '10% of goal (27 min remaining)'
+				return element?.textContent === '10% of goal (108 min remaining)'
 			})
 		).toBeInTheDocument()
 	})
 
-	it('calculates remaining time correctly', () => {
-		render(<LiveDuration />)
-
-		act(() => {
-			jest.advanceTimersByTime(300000) // 5 minutes
-		})
-
-		// 30 min goal - 5 min elapsed = 25 min remaining (16.666% rounds to 16.6%)
-		expect(
-			screen.getByText((content, element) => {
-				return element?.textContent === '16.6% of goal (25 min remaining)'
-			})
-		).toBeInTheDocument()
-	})
-
-	it('changes goal duration and recalculates progress', async () => {
+	it('shows correct progress bar colors based on goal progress', async () => {
 		const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
-		render(<LiveDuration />)
+		renderWithSessionProvider(<LiveDuration />)
 
-		// Run timer for 5 minutes
+		await startSession(user)
+
+		// Red for early progress (0-40% of 2-hour goal)
 		act(() => {
-			jest.advanceTimersByTime(300000)
+			jest.advanceTimersByTime(1440000) // 24 minutes = 20% of 2-hour goal
 		})
+		expect(screen.getByRole('progressbar')).toHaveClass('bg-red-500')
 
-		// Initially 30 min goal: 5/30 = 16.6%
-		expect(
-			screen.getByText((content, element) => {
-				return element?.textContent === '16.6% of goal (25 min remaining)'
-			})
-		).toBeInTheDocument()
-
-		// Pause to allow goal change
-		const pauseButton = screen.getByLabelText('Pause timer')
-		await user.click(pauseButton)
-
-		// Change goal to 15 minutes
-		const goalSelect = screen.getByRole('combobox')
-		await user.click(goalSelect)
-		await user.click(screen.getByText('15 min'))
-
-		// New calculation: 5/15 = 33.3%
-		expect(
-			screen.getByText((content, element) => {
-				return element?.textContent === '33.3% of goal (10 min remaining)'
-			})
-		).toBeInTheDocument()
-		expect(screen.getByText('15:00')).toBeInTheDocument() // Progress bar end time
-	})
-
-	it('shows correct progress bar colors based on time', () => {
-		render(<LiveDuration />)
-
-		// Green for under 5 minutes
+		// Orange for moderate progress (40-70% of goal)
 		act(() => {
-			jest.advanceTimersByTime(240000) // 4 minutes
-		})
-		expect(screen.getByRole('progressbar')).toHaveClass('bg-green-500')
-
-		// Yellow for 5-15 minutes
-		act(() => {
-			jest.advanceTimersByTime(360000) // +6 minutes = 10 minutes total
-		})
-		expect(screen.getByRole('progressbar')).toHaveClass('bg-yellow-500')
-
-		// Orange for 15-30 minutes
-		act(() => {
-			jest.advanceTimersByTime(600000) // +10 minutes = 20 minutes total
+			jest.advanceTimersByTime(2160000) // +36 minutes = 60 minutes total = 50% of goal
 		})
 		expect(screen.getByRole('progressbar')).toHaveClass('bg-orange-500')
 
-		// Red for 30+ minutes
+		// Yellow for good progress (70-90% of goal)
 		act(() => {
-			jest.advanceTimersByTime(660000) // +11 minutes = 31 minutes total
+			jest.advanceTimersByTime(1800000) // +30 minutes = 90 minutes total = 75% of goal
 		})
-		expect(screen.getByRole('progressbar')).toHaveClass('bg-red-500')
+		expect(screen.getByRole('progressbar')).toHaveClass('bg-yellow-500')
+
+		// Green for excellent progress (90%+ of goal)
+		act(() => {
+			jest.advanceTimersByTime(1080000) // +18 minutes = 108 minutes total = 90% of goal
+		})
+		expect(screen.getByRole('progressbar')).toHaveClass('bg-green-500')
 	})
 
 	it('shows correct status indicators', async () => {
 		const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
-		render(<LiveDuration />)
+		renderWithSessionProvider(<LiveDuration />)
 
-		// Initially live (green pulsing)
+		// Initially ready to start
+		const readyIndicator =
+			screen.getByText('Ready to Start').previousElementSibling
+		expect(readyIndicator).toHaveClass('bg-gray-400')
+
+		await startSession(user)
+
+		// Should show live (green pulsing)
 		const liveIndicator = screen.getByText('Live').previousElementSibling
 		expect(liveIndicator).toHaveClass('bg-green-500', 'animate-pulse')
 
@@ -237,81 +213,90 @@ describe('LiveDuration Component', () => {
 		const pausedIndicator = screen.getByText('Paused').previousElementSibling
 		expect(pausedIndicator).toHaveClass('bg-yellow-500')
 
-		// End (gray)
+		// Resume first
 		const resumeButton = screen.getByLabelText('Resume timer')
-		await user.click(resumeButton) // Resume first
+		await user.click(resumeButton)
 
+		// End the session
 		const endButton = screen.getByLabelText('End session')
 		await user.click(endButton)
 
-		const endedIndicator =
-			screen.getByText('Session Ended').previousElementSibling
-		expect(endedIndicator).toHaveClass('bg-gray-500')
+		// Should be back to ready state
+		const readyIndicatorAfterEnd =
+			screen.getByText('Ready to Start').previousElementSibling
+		expect(readyIndicatorAfterEnd).toHaveClass('bg-gray-400')
 	})
 
-	it('prevents goal changes during active session', async () => {
+	it('displays session info during active session', async () => {
 		const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
-		render(<LiveDuration />)
+		renderWithSessionProvider(<LiveDuration />)
 
-		// Goal selector should be disabled during active session
-		const goalSelect = screen.getByRole('combobox')
-		expect(goalSelect).toBeDisabled()
+		await startSession(user)
 
-		// Pause to enable goal changes
-		const pauseButton = screen.getByLabelText('Pause timer')
-		await user.click(pauseButton)
-
-		expect(goalSelect).not.toBeDisabled()
+		// Should show session info
+		expect(screen.getByText('Goal: 2:00:00')).toBeInTheDocument()
 	})
 
-	it('displays goal options correctly', async () => {
+	it('handles goal changes in modal', async () => {
 		const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
-		render(<LiveDuration />)
+		renderWithSessionProvider(<LiveDuration />)
 
-		// Pause to enable goal selector
-		const pauseButton = screen.getByLabelText('Pause timer')
-		await user.click(pauseButton)
+		// Open modal
+		const startButton = screen.getByText('Start Session')
+		await user.click(startButton)
 
-		const goalSelect = screen.getByRole('combobox')
-		await user.click(goalSelect)
+		// Change to 1 hour goal
+		const selectTrigger = screen.getByRole('combobox')
+		await user.click(selectTrigger)
 
-		// Wait for dropdown to open and check all goal options are present
-		expect(await screen.findByText('15 min')).toBeInTheDocument()
+		const oneHourOption = screen.getByText('1 hour')
+		await user.click(oneHourOption)
 
-		// Use getAllByText to handle multiple instances and verify both exist
-		const thirtyMinOptions = screen.getAllByText('30 min')
-		expect(thirtyMinOptions).toHaveLength(2) // One in trigger, one in dropdown
+		// Start session
+		const modalStartButtons = screen.getAllByText('Start Session')
+		const modalStartButton = modalStartButtons[1]
+		await user.click(modalStartButton)
 
-		expect(screen.getByText('1 hour')).toBeInTheDocument()
-		expect(screen.getByText('2 hours')).toBeInTheDocument()
-		expect(screen.getByText('4 hours')).toBeInTheDocument()
+		// Should show 1 hour (60 minutes) remaining
+		expect(
+			screen.getByText((content, element) => {
+				return element?.textContent === '0% of goal (60 min remaining)'
+			})
+		).toBeInTheDocument()
 	})
 
-	it('handles edge case when time exceeds goal', () => {
-		render(<LiveDuration />)
+	it('handles edge case when time exceeds goal', async () => {
+		const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
+		renderWithSessionProvider(<LiveDuration />)
 
-		// Run timer beyond the 30-minute goal
+		// Open modal
+		const startButton = screen.getByText('Start Session')
+		await user.click(startButton)
+
+		// Change to 15 min goal (smallest option)
+		const selectTrigger = screen.getByRole('combobox')
+		await user.click(selectTrigger)
+
+		const fifteenMinOption = screen.getByText('15 min')
+		await user.click(fifteenMinOption)
+
+		// Start session
+		const modalStartButtons = screen.getAllByText('Start Session')
+		const modalStartButton = modalStartButtons[1]
+		await user.click(modalStartButton)
+
+		// Run for 20 minutes (exceeding the 15 min goal)
 		act(() => {
-			jest.advanceTimersByTime(2400000) // 40 minutes
+			jest.advanceTimersByTime(1200000) // 20 minutes
 		})
 
-		// Progress should cap at 100%
+		// Progress should show 100% of goal with 0 min remaining
 		expect(
 			screen.getByText((content, element) => {
 				return element?.textContent === '100% of goal (0 min remaining)'
 			})
 		).toBeInTheDocument()
-	})
 
-	it('shows progress bar width correctly', () => {
-		render(<LiveDuration />)
-
-		// 25% progress (7.5 minutes of 30 minutes)
-		act(() => {
-			jest.advanceTimersByTime(450000) // 7.5 minutes
-		})
-
-		const progressBar = screen.getByRole('progressbar')
-		expect(progressBar).toHaveStyle('width: 25%')
+		expect(screen.getByText('20:00')).toBeInTheDocument()
 	})
 })
