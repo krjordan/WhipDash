@@ -22,6 +22,17 @@ global.ResizeObserver = jest.fn().mockImplementation(() => ({
 	disconnect: jest.fn()
 }))
 
+// Mock ConfettiCelebration component for tests (since it requires canvas)
+jest.mock('@/components/confetti-celebration', () => ({
+	ConfettiCelebration: ({ isActive, onComplete }) => {
+		// Simulate confetti completion in tests
+		if (isActive && onComplete) {
+			setTimeout(onComplete, 100)
+		}
+		return null
+	}
+}))
+
 // Suppress React act() warnings in tests
 const originalError = console.error
 beforeAll(() => {
