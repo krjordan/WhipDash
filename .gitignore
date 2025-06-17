@@ -51,3 +51,5 @@ junit.xml
 
 # Bundle analysis
 .next/analyze/
+
+.cursorrules
