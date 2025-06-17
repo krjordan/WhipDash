@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { Play, Pause, Square, Target, DollarSign } from 'lucide-react'
+import { Play, Pause, Square, Target } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
