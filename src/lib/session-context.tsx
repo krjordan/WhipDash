@@ -35,6 +35,32 @@ interface SessionContextType {
 	shopifyData: {
 		orderCount: number
 		totalSales: number
+		orders: Array<{
+			id: string | number
+			name: string
+			created_at: string
+			subtotal_price: number
+			total_tax: number
+			total_shipping: number
+			total_price: number
+			current_subtotal_price: number
+			total_discounts: number
+			financial_status: string
+			fulfillment_status: string
+			customer?: {
+				id: string | number
+				first_name: string
+				last_name: string
+				email: string
+			}
+			line_items: Array<{
+				id: string | number
+				title: string
+				price: number
+				quantity: number
+				total_discount: number
+			}>
+		}>
 		loading: boolean
 		error: string | null
 		lastUpdated: Date | null
@@ -115,6 +141,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 	const shopifyData = {
 		orderCount: shopifyOrderData?.summary?.orderCount || 0,
 		totalSales: shopifyOrderData?.summary?.finalTotalPrice || 0,
+		orders: shopifyOrderData?.orders || [], // Include the actual order breakdown data
 		loading: shopifyLoading,
 		error: shopifyError,
 		lastUpdated: shopifyOrderData ? new Date() : null

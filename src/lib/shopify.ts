@@ -69,6 +69,21 @@ export function createShopifySession(): Session {
 }
 
 // Type definitions for Shopify orders
+export interface ShopifyLineItem {
+	id: string | number
+	title: string
+	price: string
+	quantity: number
+	total_discount: string
+}
+
+export interface ShopifyCustomer {
+	id: string | number
+	first_name: string
+	last_name: string
+	email: string
+}
+
 export interface ShopifyOrder {
 	id: string | number
 	name: string
@@ -85,10 +100,28 @@ export interface ShopifyOrder {
 	total_discounts: string
 	financial_status: string
 	fulfillment_status: string
+	customer?: ShopifyCustomer
+	line_items: ShopifyLineItem[]
 }
 
 export interface ShopifyOrdersResponse {
 	orders: ShopifyOrder[]
+}
+
+export interface LineItemBreakdown {
+	id: string | number
+	title: string
+	price: number
+	quantity: number
+	total_discount: number
+	line_total: number // price * quantity - total_discount
+}
+
+export interface CustomerInfo {
+	id: string | number
+	first_name: string
+	last_name: string
+	email: string
 }
 
 export interface OrderBreakdown {
@@ -103,6 +136,8 @@ export interface OrderBreakdown {
 	total_discounts: number
 	financial_status: string
 	fulfillment_status: string
+	customer?: CustomerInfo
+	line_items: LineItemBreakdown[]
 }
 
 export interface OrderQueryParams {
@@ -111,5 +146,6 @@ export interface OrderQueryParams {
 	limit: number
 	created_at_min?: string
 	created_at_max?: string
+	fields?: string
 	[key: string]: string | number | undefined
 }

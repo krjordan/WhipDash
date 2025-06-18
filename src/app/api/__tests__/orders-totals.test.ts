@@ -148,7 +148,9 @@ describe('/api/orders/totals', () => {
 			current_subtotal_price: 95,
 			total_discounts: 5,
 			financial_status: 'paid',
-			fulfillment_status: 'unfulfilled'
+			fulfillment_status: 'unfulfilled',
+			customer: undefined,
+			line_items: []
 		})
 
 		expect(responseData.orders[1]).toEqual({
@@ -162,7 +164,9 @@ describe('/api/orders/totals', () => {
 			current_subtotal_price: 180,
 			total_discounts: 20,
 			financial_status: 'paid',
-			fulfillment_status: 'unfulfilled'
+			fulfillment_status: 'unfulfilled',
+			customer: undefined,
+			line_items: []
 		})
 	})
 
