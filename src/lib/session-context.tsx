@@ -131,7 +131,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 		refetch: refetchShopifyData
 	} = useOrderTotals({
 		created_at_min: dateRange.start,
-		created_at_max: dateRange.end,
+		// Removed created_at_max to avoid filtering out recent orders from today
 		refreshInterval:
 			sessionState.isRunning && !isTestEnvironment ? 30000 : undefined, // 30 seconds when live
 		enabled: sessionState.isStarted && !isTestEnvironment

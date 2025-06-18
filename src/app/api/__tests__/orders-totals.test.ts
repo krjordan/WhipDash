@@ -108,9 +108,7 @@ describe('/api/orders/totals', () => {
 			query: {
 				status: 'open',
 				fulfillment_status: 'unfulfilled',
-				limit: 250,
-				fields:
-					'id,name,created_at,subtotal_price,total_tax,total_shipping_price_set,total_price,current_subtotal_price,total_discounts,financial_status,fulfillment_status,customer,line_items'
+				limit: 250
 			}
 		})
 
@@ -205,9 +203,7 @@ describe('/api/orders/totals', () => {
 			fulfillment_status: 'unfulfilled',
 			limit: 250,
 			created_at_min: '2024-01-01',
-			created_at_max: '2024-01-31',
-			fields:
-				'id,name,created_at,subtotal_price,total_tax,total_shipping_price_set,total_price,current_subtotal_price,total_discounts,financial_status,fulfillment_status,customer,line_items'
+			created_at_max: '2024-01-31'
 		})
 
 		const responseData = (NextResponse.json as jest.Mock).mock.calls[0][0]
