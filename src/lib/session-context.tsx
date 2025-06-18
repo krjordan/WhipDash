@@ -1,6 +1,13 @@
 'use client'
 
-import React, { createContext, useContext, useState, ReactNode } from 'react'
+import React, {
+	createContext,
+	useContext,
+	useState,
+	ReactNode,
+	useEffect
+} from 'react'
+import { useOrderTotals, formatDateForApi } from './shopify-api'
 
 interface SessionState {
 	isStarted: boolean
@@ -23,6 +30,13 @@ interface SessionContextType {
 	sessionState: SessionState
 	salesGoalState: SalesGoalState
 	ordersState: OrdersState
+	shopifyData: {
+		orderCount: number
+		totalSales: number
+		loading: boolean
+		error: string | null
+		lastUpdated: Date | null
+	}
 	startSession: () => void
 	pauseSession: () => void
 	resumeSession: () => void
@@ -32,9 +46,22 @@ interface SessionContextType {
 	resetSales: () => void
 	addOrder: () => void
 	resetOrders: () => void
+	refreshShopifyData: () => void
 }
 
 const SessionContext = createContext<SessionContextType | undefined>(undefined)
+
+// Helper to get last 7 days date range
+function getLast7DaysDateRange() {
+	const today = new Date()
+	const sevenDaysAgo = new Date(today)
+	sevenDaysAgo.setDate(today.getDate() - 7)
+
+	return {
+		start: formatDateForApi(sevenDaysAgo),
+		end: formatDateForApi(today)
+	}
+}
 
 export function SessionProvider({ children }: { children: ReactNode }) {
 	const [sessionState, setSessionState] = useState<SessionState>({
@@ -53,6 +80,57 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 		totalOrders: 0,
 		lastSessionOrders: 0
 	})
+
+	// Shopify API integration - only fetch when session is active and not in test environment
+	const isTestEnvironment =
+		typeof process !== 'undefined' &&
+		(process.env.NODE_ENV === 'test' ||
+			process.env.JEST_WORKER_ID !== undefined)
+
+	// Get last 7 days date range for more comprehensive testing
+	const dateRange = getLast7DaysDateRange()
+
+	const {
+		data: shopifyOrderData,
+		loading: shopifyLoading,
+		error: shopifyError,
+		refetch: refetchShopifyData
+	} = useOrderTotals({
+		created_at_min: dateRange.start,
+		created_at_max: dateRange.end,
+		refreshInterval:
+			sessionState.isRunning && !isTestEnvironment ? 30000 : undefined, // 30 seconds when live
+		enabled: sessionState.isStarted && !isTestEnvironment
+	})
+
+	// Derived shopify data state
+	const shopifyData = {
+		orderCount: shopifyOrderData?.summary?.orderCount || 0,
+		totalSales: shopifyOrderData?.summary?.finalTotalPrice || 0,
+		loading: shopifyLoading,
+		error: shopifyError,
+		lastUpdated: shopifyOrderData ? new Date() : null
+	}
+
+	// Update local orders state when Shopify data changes
+	useEffect(() => {
+		if (shopifyOrderData && sessionState.isStarted) {
+			setOrdersState((prev) => ({
+				...prev,
+				totalOrders: shopifyOrderData.summary.orderCount
+			}))
+		}
+	}, [shopifyOrderData, sessionState.isStarted])
+
+	// Update sales goal current amount from Shopify data
+	useEffect(() => {
+		if (shopifyOrderData && sessionState.isStarted) {
+			setSalesGoalState((prev) => ({
+				...prev,
+				currentAmount: shopifyOrderData.summary.finalTotalPrice
+			}))
+		}
+	}, [shopifyOrderData, sessionState.isStarted])
 
 	const startSession = () => {
 		setSessionState({
@@ -132,12 +210,17 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 		}))
 	}
 
+	const refreshShopifyData = () => {
+		refetchShopifyData()
+	}
+
 	return (
 		<SessionContext.Provider
 			value={{
 				sessionState,
 				salesGoalState,
 				ordersState,
+				shopifyData,
 				startSession,
 				pauseSession,
 				resumeSession,
@@ -146,7 +229,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 				addSale,
 				resetSales,
 				addOrder,
-				resetOrders
+				resetOrders,
+				refreshShopifyData
 			}}
 		>
 			{children}
