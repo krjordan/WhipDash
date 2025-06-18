@@ -58,6 +58,17 @@ Add these secrets to your GitHub repository settings:
 - `VERCEL_ORG_ID`: Your Vercel organization ID
 - `VERCEL_PROJECT_ID`: Your Vercel project ID
 
+### For Shopify Integration (Required)
+
+Add these environment variables to your deployment platform:
+
+- `SHOPIFY_API_KEY`: Your Shopify custom app API key
+- `SHOPIFY_API_SECRET`: Your Shopify custom app API secret
+- `SHOPIFY_SHOP`: Your store domain (e.g., your-store.myshopify.com)
+- `SHOPIFY_ACCESS_TOKEN`: Your Shopify Admin API access token
+- `HOST_NAME`: Your app's production URL (e.g., https://yourdomain.vercel.app)
+- `NODE_ENV`: Set to 'production'
+
 ### For Lighthouse CI (Optional)
 
 - `LHCI_GITHUB_APP_TOKEN`: GitHub app token for Lighthouse CI (not required with treosh action)
