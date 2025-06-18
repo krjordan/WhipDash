@@ -15,7 +15,8 @@ export async function GET(request: NextRequest) {
 		const client = new shopify.clients.Rest({ session })
 
 		const query: OrderQueryParams = {
-			status: 'any', // Get all orders regardless of status
+			status: 'open', // Only get open orders (not closed/cancelled)
+			fulfillment_status: 'unfulfilled', // Only get unfulfilled orders
 			limit: 250
 		}
 

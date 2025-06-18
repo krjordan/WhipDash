@@ -94,7 +94,7 @@ describe('/api/orders/totals', () => {
 		jest.restoreAllMocks()
 	})
 
-	xit('calculates totals correctly with default parameters', async () => {
+	it('calculates totals correctly with default parameters', async () => {
 		const mockRequest = {
 			url: 'http://localhost:3000/api/orders/totals'
 		} as NextRequest
@@ -108,7 +108,9 @@ describe('/api/orders/totals', () => {
 			query: {
 				status: 'open',
 				fulfillment_status: 'unfulfilled',
-				limit: 250
+				limit: 250,
+				fields:
+					'id,name,created_at,subtotal_price,total_tax,total_shipping_price_set,total_price,current_subtotal_price,total_discounts,financial_status,fulfillment_status,customer,line_items'
 			}
 		})
 
@@ -170,7 +172,7 @@ describe('/api/orders/totals', () => {
 		})
 	})
 
-	xit('handles today filter correctly', async () => {
+	it('handles today filter correctly', async () => {
 		const mockRequest = {
 			url: 'http://localhost:3000/api/orders/totals?today=true'
 		} as NextRequest
@@ -190,7 +192,7 @@ describe('/api/orders/totals', () => {
 		expect(responseData.filter.startDate).toMatch(/^\d{4}-\d{2}-\d{2}$/)
 	})
 
-	xit('handles custom date range filter correctly', async () => {
+	it('handles custom date range filter correctly', async () => {
 		const mockRequest = {
 			url: 'http://localhost:3000/api/orders/totals?created_at_min=2024-01-01&created_at_max=2024-01-31'
 		} as NextRequest
@@ -203,7 +205,9 @@ describe('/api/orders/totals', () => {
 			fulfillment_status: 'unfulfilled',
 			limit: 250,
 			created_at_min: '2024-01-01',
-			created_at_max: '2024-01-31'
+			created_at_max: '2024-01-31',
+			fields:
+				'id,name,created_at,subtotal_price,total_tax,total_shipping_price_set,total_price,current_subtotal_price,total_discounts,financial_status,fulfillment_status,customer,line_items'
 		})
 
 		const responseData = (NextResponse.json as jest.Mock).mock.calls[0][0]
