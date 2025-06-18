@@ -5,8 +5,10 @@ import React, {
 	useContext,
 	useState,
 	ReactNode,
-	useEffect
+	useEffect,
+	useRef
 } from 'react'
+import toast from 'react-hot-toast'
 import { useOrderTotals, formatDateForApi } from './shopify-api'
 
 interface SessionState {
@@ -81,6 +83,12 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 		lastSessionOrders: 0
 	})
 
+	// Refs to track previous values for notifications
+	const previousOrderCount = useRef<number>(0)
+	const previousSalesAmount = useRef<number>(0)
+	const hasReachedGoal = useRef<boolean>(false)
+	const previousError = useRef<string | null>(null)
+
 	// Shopify API integration - only fetch when session is active and not in test environment
 	const isTestEnvironment =
 		typeof process !== 'undefined' &&
@@ -112,6 +120,97 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 		lastUpdated: shopifyOrderData ? new Date() : null
 	}
 
+	// Toast notification for new orders
+	useEffect(() => {
+		if (shopifyOrderData && sessionState.isStarted && sessionState.isRunning) {
+			const currentOrderCount = shopifyOrderData.summary.orderCount
+
+			// Only notify if order count increased and we have a previous count
+			if (
+				currentOrderCount > previousOrderCount.current &&
+				previousOrderCount.current > 0
+			) {
+				const newOrders = currentOrderCount - previousOrderCount.current
+				toast.success(
+					`🛒 ${
+						newOrders === 1
+							? 'New order received!'
+							: `${newOrders} new orders received!`
+					}`,
+					{
+						id: `new-orders-${currentOrderCount}`, // Prevent duplicates
+						duration: 5000
+					}
+				)
+			}
+
+			previousOrderCount.current = currentOrderCount
+		}
+	}, [shopifyOrderData, sessionState.isStarted, sessionState.isRunning])
+
+	// Toast notification for sales goal achievement
+	useEffect(() => {
+		if (sessionState.isStarted && sessionState.isRunning) {
+			const currentAmount = salesGoalState.currentAmount
+			const goalAmount = salesGoalState.goalAmount
+
+			// Check if goal was just reached
+			if (
+				currentAmount >= goalAmount &&
+				!hasReachedGoal.current &&
+				previousSalesAmount.current < goalAmount
+			) {
+				hasReachedGoal.current = true
+				toast.success(
+					`🎉 Sales goal reached! $${currentAmount.toFixed(
+						2
+					)} / $${goalAmount.toFixed(2)}`,
+					{
+						id: 'goal-reached',
+						duration: 6000
+					}
+				)
+			}
+
+			// Reset goal tracking if amount goes below goal (e.g., refunds)
+			if (currentAmount < goalAmount) {
+				hasReachedGoal.current = false
+			}
+
+			previousSalesAmount.current = currentAmount
+		}
+	}, [
+		salesGoalState.currentAmount,
+		salesGoalState.goalAmount,
+		sessionState.isStarted,
+		sessionState.isRunning
+	])
+
+	// Toast notification for errors
+	useEffect(() => {
+		if (
+			shopifyError &&
+			shopifyError !== previousError.current &&
+			sessionState.isStarted
+		) {
+			toast.error(`⚠️ Shopify connection error: ${shopifyError}`, {
+				id: 'shopify-error',
+				duration: 8000
+			})
+		}
+
+		// Clear error toast when error is resolved
+		if (!shopifyError && previousError.current) {
+			toast.dismiss('shopify-error')
+			toast.success('✅ Shopify connection restored', {
+				id: 'shopify-restored',
+				duration: 3000
+			})
+		}
+
+		previousError.current = shopifyError
+	}, [shopifyError, sessionState.isStarted])
+
 	// Update local orders state when Shopify data changes
 	useEffect(() => {
 		if (shopifyOrderData && sessionState.isStarted) {
@@ -139,6 +238,16 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 			isEnded: false,
 			status: 'live'
 		})
+
+		// Reset tracking refs when starting a new session
+		previousOrderCount.current = 0
+		previousSalesAmount.current = 0
+		hasReachedGoal.current = false
+
+		toast.success('🚀 Sales session started!', {
+			id: 'session-started',
+			duration: 3000
+		})
 	}
 
 	const pauseSession = () => {
@@ -147,6 +256,11 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 			isRunning: false,
 			status: 'paused'
 		}))
+
+		toast('⏸️ Session paused', {
+			id: 'session-paused',
+			duration: 2000
+		})
 	}
 
 	const resumeSession = () => {
@@ -155,9 +269,17 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 			isRunning: true,
 			status: 'live'
 		}))
+
+		toast.success('▶️ Session resumed', {
+			id: 'session-resumed',
+			duration: 2000
+		})
 	}
 
 	const endSession = () => {
+		const finalOrders = ordersState.totalOrders
+		const finalSales = salesGoalState.currentAmount
+
 		setOrdersState((prev) => ({
 			lastSessionOrders: prev.totalOrders,
 			totalOrders: 0
@@ -173,6 +295,21 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 			...prev,
 			currentAmount: 0
 		}))
+
+		// Reset tracking refs
+		previousOrderCount.current = 0
+		previousSalesAmount.current = 0
+		hasReachedGoal.current = false
+
+		toast.success(
+			`🏁 Session ended! ${finalOrders} orders, $${finalSales.toFixed(
+				2
+			)} in sales`,
+			{
+				id: 'session-ended',
+				duration: 5000
+			}
+		)
 	}
 
 	const setSalesGoal = (amount: number) => {
@@ -180,6 +317,11 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 			...prev,
 			goalAmount: amount
 		}))
+
+		toast(`🎯 Sales goal set to $${amount.toFixed(2)}`, {
+			id: 'goal-set',
+			duration: 2000
+		})
 	}
 
 	const addSale = (amount: number) => {
@@ -211,6 +353,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 	}
 
 	const refreshShopifyData = () => {
+		toast.loading('🔄 Refreshing sales data...', {
+			id: 'refresh-data',
+			duration: 2000
+		})
 		refetchShopifyData()
 	}
 

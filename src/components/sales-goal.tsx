@@ -15,6 +15,7 @@ export function SalesGoal() {
 	React.useEffect(() => {
 		if (
 			sessionState.isStarted &&
+			sessionState.isRunning &&
 			salesGoalState.currentAmount >= salesGoalState.goalAmount &&
 			!hasReachedSalesGoal
 		) {
@@ -25,16 +26,24 @@ export function SalesGoal() {
 		salesGoalState.currentAmount,
 		salesGoalState.goalAmount,
 		sessionState.isStarted,
+		sessionState.isRunning,
 		hasReachedSalesGoal
 	])
 
-	// Reset goal tracking when session starts/ends
+	// Reset goal tracking when session starts/ends or goal changes
 	React.useEffect(() => {
-		if (!sessionState.isStarted) {
+		if (
+			!sessionState.isStarted ||
+			salesGoalState.currentAmount < salesGoalState.goalAmount
+		) {
 			setHasReachedSalesGoal(false)
 			setShowConfetti(false)
 		}
-	}, [sessionState.isStarted])
+	}, [
+		sessionState.isStarted,
+		salesGoalState.currentAmount,
+		salesGoalState.goalAmount
+	])
 
 	const formatCurrency = (amount: number) => {
 		return new Intl.NumberFormat('en-US', {
