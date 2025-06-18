@@ -48,7 +48,7 @@ NODE_ENV=development
 ### API Endpoints
 
 - `GET /api/health` - API health check
-- `GET /api/orders` - Fetch orders with optional date filtering
+
 - `GET /api/orders/totals` - Fetch orders with detailed financial breakdown
 
 ## Learn More

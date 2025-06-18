@@ -28,6 +28,19 @@ export interface OrderTotalsResponse {
 		total_discounts: number
 		financial_status: string
 		fulfillment_status: string
+		customer?: {
+			id: string | number
+			first_name: string
+			last_name: string
+			email: string
+		}
+		line_items: Array<{
+			id: string | number
+			title: string
+			price: number
+			quantity: number
+			total_discount: number
+		}>
 	}>
 	explanation: Record<string, string>
 }
@@ -115,88 +128,6 @@ export function useOrderTotals(options?: {
 		loading,
 		error,
 		refetch: fetchOrderTotals
-	}
-}
-
-// Hook for fetching basic orders (without totals breakdown)
-export function useOrders(options?: {
-	today?: boolean
-	created_at_min?: string
-	created_at_max?: string
-	refreshInterval?: number
-	enabled?: boolean
-}) {
-	const [data, setData] = useState<{ body: { orders: unknown[] } } | null>(null)
-	const [loading, setLoading] = useState(false)
-	const [error, setError] = useState<string | null>(null)
-
-	const fetchOrders = useCallback(async () => {
-		if (options?.enabled === false) return
-
-		setLoading(true)
-		setError(null)
-
-		try {
-			const params = new URLSearchParams()
-
-			if (options?.today) {
-				params.append('today', 'true')
-			} else {
-				if (options?.created_at_min) {
-					params.append('created_at_min', options.created_at_min)
-				}
-				if (options?.created_at_max) {
-					params.append('created_at_max', options.created_at_max)
-				}
-			}
-
-			const url = `/api/orders${
-				params.toString() ? `?${params.toString()}` : ''
-			}`
-			const response = await fetch(url)
-
-			if (!response.ok) {
-				const errorData: ApiError = await response.json()
-				throw new Error(errorData.error || 'Failed to fetch orders')
-			}
-
-			const result = await response.json()
-			setData(result)
-		} catch (err) {
-			const errorMessage =
-				err instanceof Error ? err.message : 'Unknown error occurred'
-			setError(errorMessage)
-			console.error('Error fetching orders:', err)
-		} finally {
-			setLoading(false)
-		}
-	}, [
-		options?.today,
-		options?.created_at_min,
-		options?.created_at_max,
-		options?.enabled
-	])
-
-	// Initial fetch - only if enabled
-	useEffect(() => {
-		if (options?.enabled !== false) {
-			fetchOrders()
-		}
-	}, [fetchOrders, options?.enabled])
-
-	// Set up polling if refreshInterval is provided
-	useEffect(() => {
-		if (!options?.refreshInterval || options?.enabled === false) return
-
-		const interval = setInterval(fetchOrders, options.refreshInterval)
-		return () => clearInterval(interval)
-	}, [fetchOrders, options?.refreshInterval, options?.enabled])
-
-	return {
-		data,
-		loading,
-		error,
-		refetch: fetchOrders
 	}
 }
 

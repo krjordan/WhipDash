@@ -5,14 +5,14 @@ import {
 	CardHeader,
 	CardTitle
 } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
+import { PackageX } from 'lucide-react'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { LiveDuration } from '@/components/live-duration'
 import { LiveStatusBadge } from '@/components/live-status-badge'
 import { SalesGoal } from '@/components/sales-goal'
 import { TotalOrders } from '@/components/total-orders'
-import { OrderControls } from '@/components/order-controls'
 import { SessionProvider } from '@/lib/session-context'
+import { RecentOrders } from '@/components/recent-orders'
 
 export default function Dashboard() {
 	return (
@@ -67,123 +67,23 @@ export default function Dashboard() {
 
 						{/* Recent Activity */}
 						<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-							<Card className="col-span-4">
-								<CardHeader>
-									<CardTitle>Recent Sales</CardTitle>
-									<CardDescription>
-										You made 265 sales this month.
-									</CardDescription>
-								</CardHeader>
-								<CardContent>
-									<div
-										className="space-y-8"
-										role="list"
-										aria-label="Recent sales transactions"
-									>
-										{[
-											{
-												name: 'Olivia Martin',
-												email: 'olivia.martin@email.com',
-												amount: '+$1,999.00'
-											},
-											{
-												name: 'Jackson Lee',
-												email: 'jackson.lee@email.com',
-												amount: '+$39.00'
-											},
-											{
-												name: 'Isabella Nguyen',
-												email: 'isabella.nguyen@email.com',
-												amount: '+$299.00'
-											},
-											{
-												name: 'William Kim',
-												email: 'will@email.com',
-												amount: '+$99.00'
-											},
-											{
-												name: 'Sofia Davis',
-												email: 'sofia.davis@email.com',
-												amount: '+$39.00'
-											}
-										].map((sale) => (
-											<div
-												key={sale.email}
-												className="flex items-center"
-												role="listitem"
-												aria-label={`Sale to ${sale.name} for ${sale.amount}`}
-											>
-												<div className="ml-4 space-y-1">
-													<p className="text-sm font-medium leading-none">
-														{sale.name}
-													</p>
-													<p className="text-sm text-muted-foreground">
-														{sale.email}
-													</p>
-												</div>
-												<div
-													className="ml-auto font-medium"
-													aria-label={`Amount: ${sale.amount}`}
-												>
-													{sale.amount}
-												</div>
-											</div>
-										))}
-									</div>
-								</CardContent>
-							</Card>
+							<RecentOrders />
 
 							<Card className="col-span-3">
 								<CardHeader>
-									<CardTitle>Quick Actions</CardTitle>
+									<CardTitle className="flex items-center gap-2">
+										<PackageX className="h-5 w-5" />
+										Sold Out Products
+									</CardTitle>
 									<CardDescription>
-										Manage your dashboard settings
+										Track products that are out of stock
 									</CardDescription>
 								</CardHeader>
-								<CardContent className="space-y-4">
-									<OrderControls />
-
-									<Button
-										className="w-full"
-										variant="default"
-										aria-describedby="generate-report-desc"
-									>
-										Generate Report
-									</Button>
-									<span
-										id="generate-report-desc"
-										className="sr-only"
-									>
-										Create a comprehensive sales report for the current period
-									</span>
-
-									<Button
-										className="w-full"
-										variant="outline"
-										aria-describedby="export-data-desc"
-									>
-										Export Data
-									</Button>
-									<span
-										id="export-data-desc"
-										className="sr-only"
-									>
-										Download dashboard data as CSV or Excel file
-									</span>
-
-									<Button
-										className="w-full"
-										variant="secondary"
-										aria-describedby="view-analytics-desc"
-									>
-										View Analytics
-									</Button>
-									<span
-										id="view-analytics-desc"
-										className="sr-only"
-									>
-										Open detailed analytics and insights page
-									</span>
+								<CardContent className="flex items-center justify-center min-h-[300px]">
+									<div className="text-center text-muted-foreground">
+										<PackageX className="h-12 w-12 mx-auto mb-4 opacity-50" />
+										<p className="text-lg font-medium">Coming Soon</p>
+									</div>
 								</CardContent>
 							</Card>
 						</div>

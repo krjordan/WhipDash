@@ -15,7 +15,8 @@ export async function GET(request: NextRequest) {
 		const client = new shopify.clients.Rest({ session })
 
 		const query: OrderQueryParams = {
-			status: 'any', // Get all orders regardless of status
+			status: 'open', // Only get open orders (not closed/cancelled)
+			fulfillment_status: 'unfulfilled', // Only get unfulfilled orders
 			limit: 250
 		}
 
@@ -35,11 +36,18 @@ export async function GET(request: NextRequest) {
 			query.created_at_max = createdAtMax
 		}
 
+		// Add fields to include customer and line items data
+		const queryWithFields = {
+			...Object.fromEntries(
+				Object.entries(query).filter(([, value]) => value !== undefined)
+			),
+			fields:
+				'id,name,created_at,subtotal_price,total_tax,total_shipping_price_set,total_price,current_subtotal_price,total_discounts,financial_status,fulfillment_status,customer,line_items'
+		} as Record<string, string | number>
+
 		const orders = await client.get({
 			path: 'orders',
-			query: Object.fromEntries(
-				Object.entries(query).filter(([, value]) => value !== undefined)
-			) as Record<string, string | number>
+			query: queryWithFields
 		})
 
 		const orderData = orders.body as ShopifyOrdersResponse
@@ -55,6 +63,29 @@ export async function GET(request: NextRequest) {
 		}
 
 		orderData.orders.forEach((order: ShopifyOrder) => {
+			// Process line items (with safety check for tests)
+			const lineItems = (order.line_items || []).map((item) => ({
+				id: item.id,
+				title: item.title,
+				price: parseFloat(item.price || '0'),
+				quantity: item.quantity,
+				total_discount: parseFloat(item.total_discount || '0'),
+				line_total:
+					parseFloat(item.price || '0') * item.quantity -
+					parseFloat(item.total_discount || '0')
+			}))
+
+			// Process customer info
+			let customerInfo = undefined
+			if (order.customer) {
+				customerInfo = {
+					id: order.customer.id,
+					first_name: order.customer.first_name,
+					last_name: order.customer.last_name,
+					email: order.customer.email
+				}
+			}
+
 			const orderBreakdown = {
 				id: order.id,
 				name: order.name,
@@ -68,7 +99,9 @@ export async function GET(request: NextRequest) {
 				current_subtotal_price: parseFloat(order.current_subtotal_price || '0'),
 				total_discounts: parseFloat(order.total_discounts || '0'),
 				financial_status: order.financial_status,
-				fulfillment_status: order.fulfillment_status
+				fulfillment_status: order.fulfillment_status,
+				customer: customerInfo,
+				line_items: lineItems
 			}
 
 			totals.orderBreakdown.push(orderBreakdown)
