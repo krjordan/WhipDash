@@ -11,6 +11,7 @@ import {
 export async function GET(request: NextRequest) {
 	try {
 		const { searchParams } = new URL(request.url)
+
 		const session = createShopifySession()
 		const client = new shopify.clients.Rest({ session })
 
@@ -20,15 +21,13 @@ export async function GET(request: NextRequest) {
 			limit: 250
 		}
 
+		// Add date filtering if requested (like the working server.ts)
 		if (searchParams.get('today') === 'true') {
 			const today = new Date()
 			today.setHours(0, 0, 0, 0) // Start of today
 			query.created_at_min = today.toISOString()
-		} else {
-			const createdAtMin = searchParams.get('created_at_min')
-			if (createdAtMin) {
-				query.created_at_min = createdAtMin
-			}
+		} else if (searchParams.get('created_at_min')) {
+			query.created_at_min = searchParams.get('created_at_min')!
 		}
 
 		const createdAtMax = searchParams.get('created_at_max')
@@ -36,18 +35,11 @@ export async function GET(request: NextRequest) {
 			query.created_at_max = createdAtMax
 		}
 
-		// Add fields to include customer and line items data
-		const queryWithFields = {
-			...Object.fromEntries(
-				Object.entries(query).filter(([, value]) => value !== undefined)
-			),
-			fields:
-				'id,name,created_at,subtotal_price,total_tax,total_shipping_price_set,total_price,current_subtotal_price,total_discounts,financial_status,fulfillment_status,customer,line_items'
-		} as Record<string, string | number>
-
 		const orders = await client.get({
 			path: 'orders',
-			query: queryWithFields
+			query: Object.fromEntries(
+				Object.entries(query).filter(([, value]) => value !== undefined)
+			) as Record<string, string | number>
 		})
 
 		const orderData = orders.body as ShopifyOrdersResponse
@@ -133,15 +125,15 @@ export async function GET(request: NextRequest) {
 		if (searchParams.get('today') === 'true') {
 			filterInfo.dateFilter = 'today'
 			filterInfo.startDate = new Date().toISOString().split('T')[0]
-		} else {
-			const createdAtMin = searchParams.get('created_at_min')
-			const createdAtMax = searchParams.get('created_at_max')
-
-			if (createdAtMin || createdAtMax) {
-				filterInfo.dateFilter = 'custom'
-				if (createdAtMin) filterInfo.startDate = createdAtMin
-				if (createdAtMax) filterInfo.endDate = createdAtMax
-			}
+		} else if (
+			searchParams.get('created_at_min') ||
+			searchParams.get('created_at_max')
+		) {
+			filterInfo.dateFilter = 'custom'
+			if (searchParams.get('created_at_min'))
+				filterInfo.startDate = searchParams.get('created_at_min')!
+			if (searchParams.get('created_at_max'))
+				filterInfo.endDate = searchParams.get('created_at_max')!
 		}
 
 		return NextResponse.json({
