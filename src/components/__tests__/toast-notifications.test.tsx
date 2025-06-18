@@ -2,9 +2,25 @@ import React from 'react'
 import { render, screen, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import '@testing-library/jest-dom'
-import toast from 'react-hot-toast'
 import { SessionProvider, useSession } from '../../lib/session-context'
 import { OrderControls } from '../order-controls'
+
+// Mock react-hot-toast
+jest.mock('react-hot-toast', () => {
+	const mockToast = jest.fn() as any
+	mockToast.success = jest.fn()
+	mockToast.error = jest.fn()
+	mockToast.loading = jest.fn()
+	mockToast.dismiss = jest.fn()
+
+	return {
+		__esModule: true,
+		default: mockToast
+	}
+})
+
+// Import toast after mocking
+import toast from 'react-hot-toast'
 
 // Mock the shopify-api module
 jest.mock('../../lib/shopify-api', () => ({
@@ -246,7 +262,8 @@ describe('Toast Notifications', () => {
 
 			// Verify toast was called with proper format
 			expect(toast.success).toHaveBeenCalledTimes(1)
-			const [message, options] = (toast.success as jest.Mock).mock.calls[0]
+			const [message, options] = (toast.success as jest.MockedFunction<any>)
+				.mock.calls[0]
 
 			expect(message).toMatch(/🛒 Test order added! \+\$\d+\.\d{2}/)
 			expect(options.duration).toBe(3000)
@@ -304,9 +321,9 @@ describe('Toast Notifications', () => {
 
 			// Check that each toast has a unique ID
 			const toastCalls = [
-				...(toast.success as jest.Mock).mock.calls,
-				...(toast as jest.Mock).mock.calls,
-				...(toast.loading as jest.Mock).mock.calls
+				...(toast.success as jest.MockedFunction<any>).mock.calls,
+				...(toast as jest.MockedFunction<any>).mock.calls,
+				...(toast.loading as jest.MockedFunction<any>).mock.calls
 			]
 
 			const ids = toastCalls
