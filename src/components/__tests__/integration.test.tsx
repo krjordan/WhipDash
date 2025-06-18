@@ -5,6 +5,7 @@ import '@testing-library/jest-dom'
 import { LiveDuration } from '../live-duration'
 import { LiveStatusBadge } from '../live-status-badge'
 import { SalesGoal } from '../sales-goal'
+import { TotalOrders } from '../total-orders'
 import { SessionProvider, useSession } from '../../lib/session-context'
 
 // Mock the ConfettiCelebration component for integration tests
@@ -26,11 +27,11 @@ const IntegrationTestComponent = () => {
 	)
 }
 
-// Extended integration test component with sales goal (rendered inline in tests)
+// Extended integration test component with sales goal and orders (rendered inline in tests)
 
-// Helper component to manipulate sales in tests
-const SalesTestControls = () => {
-	const { addSale } = useSession()
+// Helper component to manipulate sales and orders in tests
+const SalesAndOrdersTestControls = () => {
+	const { addSale, addOrder } = useSession()
 
 	return (
 		<div>
@@ -51,6 +52,12 @@ const SalesTestControls = () => {
 				data-testid="add-sale-300"
 			>
 				Add $300
+			</button>
+			<button
+				onClick={addOrder}
+				data-testid="add-order"
+			>
+				Add Order
 			</button>
 		</div>
 	)
@@ -216,7 +223,7 @@ describe('LiveDuration and LiveStatusBadge Integration', () => {
 	})
 })
 
-describe('LiveDuration, LiveStatusBadge, and SalesGoal Integration', () => {
+describe('LiveDuration, LiveStatusBadge, SalesGoal, and TotalOrders Integration', () => {
 	beforeEach(() => {
 		jest.useFakeTimers()
 	})
@@ -255,7 +262,8 @@ describe('LiveDuration, LiveStatusBadge, and SalesGoal Integration', () => {
 					<LiveStatusBadge />
 					<LiveDuration />
 					<SalesGoal />
-					<SalesTestControls />
+					<TotalOrders />
+					<SalesAndOrdersTestControls />
 				</div>
 			</SessionProvider>
 		)
@@ -437,5 +445,163 @@ describe('LiveDuration, LiveStatusBadge, and SalesGoal Integration', () => {
 
 		// Goal should still be $600
 		expect(screen.getByText('Goal: $600.00')).toBeInTheDocument()
+	})
+
+	it('orders tracking works independently of sales and duration', async () => {
+		const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
+		renderFullIntegration()
+
+		// Start session
+		await startSessionWithSalesGoal(user)
+
+		// Add orders independently
+		await act(async () => {
+			await user.click(screen.getByTestId('add-order'))
+			await user.click(screen.getByTestId('add-order'))
+			await user.click(screen.getByTestId('add-order'))
+		})
+
+		// TotalOrders should show 3 orders
+		expect(screen.getByText('Total Orders')).toBeInTheDocument()
+		expect(screen.getByText('3')).toBeInTheDocument()
+		expect(screen.getByText('New orders this session')).toBeInTheDocument()
+
+		// Sales should still be at initial state
+		expect(screen.getByText('$0.00')).toBeInTheDocument()
+
+		// Duration should still be running
+		expect(screen.getByText('0:00')).toBeInTheDocument()
+	})
+
+	it('orders show trending data from last session', async () => {
+		const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
+		renderFullIntegration()
+
+		// First session: 2 orders
+		await startSessionWithSalesGoal(user)
+		await act(async () => {
+			await user.click(screen.getByTestId('add-order'))
+			await user.click(screen.getByTestId('add-order'))
+		})
+
+		// End first session
+		const endButton = screen.getByLabelText('End session')
+		await user.click(endButton)
+
+		// Start second session: 3 orders
+		await startSessionWithSalesGoal(user)
+		await act(async () => {
+			await user.click(screen.getByTestId('add-order'))
+			await user.click(screen.getByTestId('add-order'))
+			await user.click(screen.getByTestId('add-order'))
+		})
+
+		// Should show positive trending (50% increase from 2 to 3)
+		expect(screen.getByText('3')).toBeInTheDocument()
+		expect(screen.getByText('+50% from last session')).toBeInTheDocument()
+		expect(screen.getByText('Last session: 2 orders')).toBeInTheDocument()
+	})
+
+	it('all components reset properly including orders when session ends', async () => {
+		const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
+		renderFullIntegration()
+
+		// Start session and add progress to all components
+		await startSessionWithSalesGoal(user)
+
+		await act(async () => {
+			// Add sales
+			await user.click(screen.getByTestId('add-sale-100'))
+			// Add orders
+			await user.click(screen.getByTestId('add-order'))
+			await user.click(screen.getByTestId('add-order'))
+			// Let time pass
+			jest.advanceTimersByTime(60000) // 1 minute
+		})
+
+		// All should show progress
+		expect(screen.getByText('$100.00')).toBeInTheDocument() // Sales
+		expect(screen.getByText('2')).toBeInTheDocument() // Orders
+		expect(screen.getByText('1:00')).toBeInTheDocument() // Duration
+
+		// End session
+		const endButton = screen.getByLabelText('End session')
+		await user.click(endButton)
+
+		// All should reset
+		expect(screen.getByText('$0.00')).toBeInTheDocument() // Sales reset
+		expect(screen.getByText('0')).toBeInTheDocument() // Orders reset to 0
+		expect(screen.getByText('0:00')).toBeInTheDocument() // Duration reset
+		expect(screen.getByText('Ready to Start')).toBeInTheDocument() // Duration status
+		expect(screen.getByText('Waiting for Session')).toBeInTheDocument() // Sales status
+		expect(screen.getByText('-100% from last session')).toBeInTheDocument() // Orders shows comparison to last session
+	})
+
+	it('orders and sales work together but track independently', async () => {
+		const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
+		renderFullIntegration()
+
+		// Start session
+		await startSessionWithSalesGoal(user)
+
+		// Add mixed orders and sales
+		await act(async () => {
+			await user.click(screen.getByTestId('add-order'))
+			await user.click(screen.getByTestId('add-sale-100'))
+			await user.click(screen.getByTestId('add-order'))
+			await user.click(screen.getByTestId('add-sale-100'))
+			await user.click(screen.getByTestId('add-order'))
+		})
+
+		// Orders should show 3
+		expect(screen.getByText('3')).toBeInTheDocument()
+		expect(screen.getByText('New orders this session')).toBeInTheDocument()
+
+		// Sales should show $200
+		expect(screen.getByText('$200.00')).toBeInTheDocument()
+		expect(
+			screen.getByText('80% of goal ($50.00 remaining)')
+		).toBeInTheDocument()
+
+		// Both components should be active independently
+		expect(screen.getByText('Tracking Sales')).toBeInTheDocument()
+		expect(screen.getByText('Total Orders')).toBeInTheDocument()
+	})
+
+	it('multiple session cycles preserve order trending correctly', async () => {
+		const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
+		renderFullIntegration()
+
+		// Session 1: 1 order
+		await startSessionWithSalesGoal(user)
+		await act(async () => {
+			await user.click(screen.getByTestId('add-order'))
+		})
+		const endButton1 = screen.getByLabelText('End session')
+		await user.click(endButton1)
+
+		// Session 2: 3 orders (200% increase)
+		await startSessionWithSalesGoal(user)
+		await act(async () => {
+			await user.click(screen.getByTestId('add-order'))
+			await user.click(screen.getByTestId('add-order'))
+			await user.click(screen.getByTestId('add-order'))
+		})
+
+		expect(screen.getByText('+200% from last session')).toBeInTheDocument()
+		expect(screen.getByText('Last session: 1 orders')).toBeInTheDocument()
+
+		const endButton2 = screen.getByLabelText('End session')
+		await user.click(endButton2)
+
+		// Session 3: 2 orders (33% decrease from 3)
+		await startSessionWithSalesGoal(user)
+		await act(async () => {
+			await user.click(screen.getByTestId('add-order'))
+			await user.click(screen.getByTestId('add-order'))
+		})
+
+		expect(screen.getByText('-33% from last session')).toBeInTheDocument()
+		expect(screen.getByText('Last session: 3 orders')).toBeInTheDocument()
 	})
 })

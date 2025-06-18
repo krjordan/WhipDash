@@ -14,9 +14,15 @@ interface SalesGoalState {
 	currentAmount: number
 }
 
+interface OrdersState {
+	totalOrders: number
+	lastSessionOrders: number
+}
+
 interface SessionContextType {
 	sessionState: SessionState
 	salesGoalState: SalesGoalState
+	ordersState: OrdersState
 	startSession: () => void
 	pauseSession: () => void
 	resumeSession: () => void
@@ -24,6 +30,8 @@ interface SessionContextType {
 	setSalesGoal: (amount: number) => void
 	addSale: (amount: number) => void
 	resetSales: () => void
+	addOrder: () => void
+	resetOrders: () => void
 }
 
 const SessionContext = createContext<SessionContextType | undefined>(undefined)
@@ -39,6 +47,11 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 	const [salesGoalState, setSalesGoalState] = useState<SalesGoalState>({
 		goalAmount: 250,
 		currentAmount: 0
+	})
+
+	const [ordersState, setOrdersState] = useState<OrdersState>({
+		totalOrders: 0,
+		lastSessionOrders: 0
 	})
 
 	const startSession = () => {
@@ -67,6 +80,11 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 	}
 
 	const endSession = () => {
+		setOrdersState((prev) => ({
+			lastSessionOrders: prev.totalOrders,
+			totalOrders: 0
+		}))
+
 		setSessionState({
 			isStarted: false,
 			isRunning: false,
@@ -100,18 +118,35 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 		}))
 	}
 
+	const addOrder = () => {
+		setOrdersState((prev) => ({
+			...prev,
+			totalOrders: prev.totalOrders + 1
+		}))
+	}
+
+	const resetOrders = () => {
+		setOrdersState((prev) => ({
+			...prev,
+			totalOrders: 0
+		}))
+	}
+
 	return (
 		<SessionContext.Provider
 			value={{
 				sessionState,
 				salesGoalState,
+				ordersState,
 				startSession,
 				pauseSession,
 				resumeSession,
 				endSession,
 				setSalesGoal,
 				addSale,
-				resetSales
+				resetSales,
+				addOrder,
+				resetOrders
 			}}
 		>
 			{children}

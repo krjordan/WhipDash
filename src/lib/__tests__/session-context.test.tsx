@@ -9,13 +9,16 @@ const TestComponent = () => {
 	const {
 		sessionState,
 		salesGoalState,
+		ordersState,
 		startSession,
 		pauseSession,
 		resumeSession,
 		endSession,
 		setSalesGoal,
 		addSale,
-		resetSales
+		resetSales,
+		addOrder,
+		resetOrders
 	} = useSession()
 
 	return (
@@ -28,6 +31,10 @@ const TestComponent = () => {
 			{/* Sales goal state */}
 			<div data-testid="goalAmount">{salesGoalState.goalAmount}</div>
 			<div data-testid="currentAmount">{salesGoalState.currentAmount}</div>
+
+			{/* Orders state */}
+			<div data-testid="totalOrders">{ordersState.totalOrders}</div>
+			<div data-testid="lastSessionOrders">{ordersState.lastSessionOrders}</div>
 
 			<button
 				onClick={startSession}
@@ -79,6 +86,20 @@ const TestComponent = () => {
 			>
 				Reset Sales
 			</button>
+
+			{/* Orders buttons */}
+			<button
+				onClick={addOrder}
+				data-testid="addOrder"
+			>
+				Add Order
+			</button>
+			<button
+				onClick={resetOrders}
+				data-testid="resetOrders"
+			>
+				Reset Orders
+			</button>
 		</div>
 	)
 }
@@ -103,6 +124,10 @@ describe('SessionContext', () => {
 		// Sales goal initial state
 		expect(screen.getByTestId('goalAmount')).toHaveTextContent('250')
 		expect(screen.getByTestId('currentAmount')).toHaveTextContent('0')
+
+		// Orders initial state
+		expect(screen.getByTestId('totalOrders')).toHaveTextContent('0')
+		expect(screen.getByTestId('lastSessionOrders')).toHaveTextContent('0')
 	})
 
 	it('handles startSession correctly', async () => {
@@ -332,6 +357,141 @@ describe('SessionContext', () => {
 
 			expect(screen.getByTestId('currentAmount')).toHaveTextContent('300')
 			expect(screen.getByTestId('goalAmount')).toHaveTextContent('500')
+		})
+	})
+
+	describe('Orders Functionality', () => {
+		it('handles addOrder correctly', async () => {
+			const user = userEvent.setup()
+			renderWithProvider()
+
+			await act(async () => {
+				await user.click(screen.getByTestId('addOrder'))
+			})
+
+			expect(screen.getByTestId('totalOrders')).toHaveTextContent('1')
+			expect(screen.getByTestId('lastSessionOrders')).toHaveTextContent('0') // Should remain unchanged
+
+			// Add another order
+			await act(async () => {
+				await user.click(screen.getByTestId('addOrder'))
+			})
+
+			expect(screen.getByTestId('totalOrders')).toHaveTextContent('2')
+		})
+
+		it('handles resetOrders correctly', async () => {
+			const user = userEvent.setup()
+			renderWithProvider()
+
+			// Add some orders first
+			await act(async () => {
+				await user.click(screen.getByTestId('addOrder'))
+				await user.click(screen.getByTestId('addOrder'))
+			})
+
+			expect(screen.getByTestId('totalOrders')).toHaveTextContent('2')
+
+			// Reset orders
+			await act(async () => {
+				await user.click(screen.getByTestId('resetOrders'))
+			})
+
+			expect(screen.getByTestId('totalOrders')).toHaveTextContent('0')
+			expect(screen.getByTestId('lastSessionOrders')).toHaveTextContent('0') // Should remain unchanged
+		})
+
+		it('stores current orders as last session data when ending session', async () => {
+			const user = userEvent.setup()
+			renderWithProvider()
+
+			// Add some orders during a session
+			await act(async () => {
+				await user.click(screen.getByTestId('start'))
+				await user.click(screen.getByTestId('addOrder'))
+				await user.click(screen.getByTestId('addOrder'))
+				await user.click(screen.getByTestId('addOrder'))
+			})
+
+			expect(screen.getByTestId('totalOrders')).toHaveTextContent('3')
+			expect(screen.getByTestId('lastSessionOrders')).toHaveTextContent('0')
+
+			// End session
+			await act(async () => {
+				await user.click(screen.getByTestId('end'))
+			})
+
+			// Current orders should be reset, last session should store the previous value
+			expect(screen.getByTestId('totalOrders')).toHaveTextContent('0')
+			expect(screen.getByTestId('lastSessionOrders')).toHaveTextContent('3')
+		})
+
+		it('handles multiple session cycles correctly', async () => {
+			const user = userEvent.setup()
+			renderWithProvider()
+
+			// First session: 2 orders
+			await act(async () => {
+				await user.click(screen.getByTestId('start'))
+				await user.click(screen.getByTestId('addOrder'))
+				await user.click(screen.getByTestId('addOrder'))
+				await user.click(screen.getByTestId('end'))
+			})
+
+			expect(screen.getByTestId('totalOrders')).toHaveTextContent('0')
+			expect(screen.getByTestId('lastSessionOrders')).toHaveTextContent('2')
+
+			// Second session: 5 orders
+			await act(async () => {
+				await user.click(screen.getByTestId('start'))
+				await user.click(screen.getByTestId('addOrder'))
+				await user.click(screen.getByTestId('addOrder'))
+				await user.click(screen.getByTestId('addOrder'))
+				await user.click(screen.getByTestId('addOrder'))
+				await user.click(screen.getByTestId('addOrder'))
+				await user.click(screen.getByTestId('end'))
+			})
+
+			// Last session should now be 5 (from second session)
+			expect(screen.getByTestId('totalOrders')).toHaveTextContent('0')
+			expect(screen.getByTestId('lastSessionOrders')).toHaveTextContent('5')
+		})
+
+		it('orders work independently of sales', async () => {
+			const user = userEvent.setup()
+			renderWithProvider()
+
+			await act(async () => {
+				await user.click(screen.getByTestId('start'))
+
+				// Add orders and sales in mixed order
+				await user.click(screen.getByTestId('addOrder'))
+				await user.click(screen.getByTestId('addSale100'))
+				await user.click(screen.getByTestId('addOrder'))
+				await user.click(screen.getByTestId('addSale50'))
+				await user.click(screen.getByTestId('addOrder'))
+			})
+
+			// Orders and sales should be tracked independently
+			expect(screen.getByTestId('totalOrders')).toHaveTextContent('3')
+			expect(screen.getByTestId('currentAmount')).toHaveTextContent('150')
+
+			// Reset only orders
+			await act(async () => {
+				await user.click(screen.getByTestId('resetOrders'))
+			})
+
+			expect(screen.getByTestId('totalOrders')).toHaveTextContent('0')
+			expect(screen.getByTestId('currentAmount')).toHaveTextContent('150') // Sales should remain
+
+			// Reset only sales
+			await act(async () => {
+				await user.click(screen.getByTestId('addOrder'))
+				await user.click(screen.getByTestId('resetSales'))
+			})
+
+			expect(screen.getByTestId('totalOrders')).toHaveTextContent('1') // Orders should remain
+			expect(screen.getByTestId('currentAmount')).toHaveTextContent('0')
 		})
 	})
 })
