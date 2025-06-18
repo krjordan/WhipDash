@@ -13,7 +13,8 @@ jobs:
   deploy:
     name: Deploy to Vercel
     runs-on: ubuntu-latest
-    if: github.event.workflow_run.conclusion == 'success' || github.event_name == 'push'
+    # Disabled - using Vercel's automatic deployment instead
+    if: false
 
     steps:
       - name: Checkout code
