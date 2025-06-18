@@ -7,6 +7,7 @@ import { OrderControls } from '../order-controls'
 
 // Mock react-hot-toast
 jest.mock('react-hot-toast', () => {
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const mockToast = jest.fn() as any
 	mockToast.success = jest.fn()
 	mockToast.error = jest.fn()
@@ -262,6 +263,7 @@ describe('Toast Notifications', () => {
 
 			// Verify toast was called with proper format
 			expect(toast.success).toHaveBeenCalledTimes(1)
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			const [message, options] = (toast.success as jest.MockedFunction<any>)
 				.mock.calls[0]
 
@@ -321,8 +323,11 @@ describe('Toast Notifications', () => {
 
 			// Check that each toast has a unique ID
 			const toastCalls = [
+				// eslint-disable-next-line @typescript-eslint/no-explicit-any
 				...(toast.success as jest.MockedFunction<any>).mock.calls,
+				// eslint-disable-next-line @typescript-eslint/no-explicit-any
 				...(toast as jest.MockedFunction<any>).mock.calls,
+				// eslint-disable-next-line @typescript-eslint/no-explicit-any
 				...(toast.loading as jest.MockedFunction<any>).mock.calls
 			]
 
