@@ -20,6 +20,37 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Shopify API Integration
+
+This application includes live Shopify integration for real-time sales and order tracking. When a session is started, the app will automatically fetch and display live data from your Shopify store.
+
+### Environment Variables
+
+Create a `.env.local` file in the root directory with the following variables:
+
+```bash
+SHOPIFY_API_KEY=your_shopify_api_key_here
+SHOPIFY_API_SECRET=your_shopify_api_secret_here
+SHOPIFY_SHOP=your-shop-name.myshopify.com
+SHOPIFY_ACCESS_TOKEN=your_shopify_access_token_here
+HOST_NAME=http://localhost:3000
+NODE_ENV=development
+```
+
+### Features
+
+- **Live Sales Tracking**: Real-time sales data updates from Shopify orders
+- **Order Count Monitoring**: Live order count with automatic refresh during active sessions
+- **Backward Compatibility**: Falls back to local state when Shopify API is unavailable
+- **Error Handling**: Graceful error handling with user-friendly error messages
+- **Auto-refresh**: Polls Shopify API every 30 seconds during live sessions
+
+### API Endpoints
+
+- `GET /api/health` - API health check
+- `GET /api/orders` - Fetch orders with optional date filtering
+- `GET /api/orders/totals` - Fetch orders with detailed financial breakdown
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

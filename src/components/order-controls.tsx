@@ -4,6 +4,7 @@ import * as React from 'react'
 import { Button } from '@/components/ui/button'
 import { useSession } from '@/lib/session-context'
 import { ShoppingCart } from 'lucide-react'
+import toast from 'react-hot-toast'
 
 export function OrderControls() {
 	const { sessionState, addOrder, addSale } = useSession()
@@ -13,6 +14,10 @@ export function OrderControls() {
 		// Also add a random sale amount between $10-$200 for each order
 		const randomSale = Math.floor(Math.random() * 191) + 10
 		addSale(randomSale)
+
+		toast.success(`🛒 Test order added! +$${randomSale.toFixed(2)}`, {
+			duration: 3000
+		})
 	}
 
 	if (!sessionState.isStarted) {

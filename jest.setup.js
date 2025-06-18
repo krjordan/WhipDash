@@ -10,6 +10,20 @@ jest.mock('next-themes', () => ({
 	ThemeProvider: ({ children }) => children
 }))
 
+// Mock react-hot-toast for testing
+const mockToast = jest.fn()
+mockToast.success = jest.fn()
+mockToast.error = jest.fn()
+mockToast.loading = jest.fn()
+mockToast.dismiss = jest.fn()
+mockToast.custom = jest.fn()
+
+jest.mock('react-hot-toast', () => ({
+	__esModule: true,
+	default: mockToast,
+	Toaster: ({ children }) => children || null
+}))
+
 // Mock browser APIs that Radix UI needs but JSDOM doesn't support
 global.HTMLElement.prototype.hasPointerCapture = jest.fn()
 global.HTMLElement.prototype.setPointerCapture = jest.fn()

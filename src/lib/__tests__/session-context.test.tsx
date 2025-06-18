@@ -2,6 +2,7 @@ import React from 'react'
 import { render, screen, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import '@testing-library/jest-dom'
+import toast from 'react-hot-toast'
 import { SessionProvider, useSession } from '../session-context'
 
 // Test component that uses the session context
@@ -492,6 +493,84 @@ describe('SessionContext', () => {
 
 			expect(screen.getByTestId('totalOrders')).toHaveTextContent('1') // Orders should remain
 			expect(screen.getByTestId('currentAmount')).toHaveTextContent('0')
+		})
+	})
+
+	it('triggers toast notifications for session actions', async () => {
+		const user = userEvent.setup()
+		renderWithProvider()
+
+		// Clear any initial mock calls
+		jest.clearAllMocks()
+
+		// Start session should trigger toast
+		await act(async () => {
+			await user.click(screen.getByTestId('start'))
+		})
+
+		expect(toast.success).toHaveBeenCalledWith('🚀 Sales session started!', {
+			id: 'session-started',
+			duration: 3000
+		})
+
+		// Clear mocks for next action
+		jest.clearAllMocks()
+
+		// Pause session should trigger toast
+		await act(async () => {
+			await user.click(screen.getByTestId('pause'))
+		})
+
+		expect(toast).toHaveBeenCalledWith('⏸️ Session paused', {
+			id: 'session-paused',
+			duration: 2000
+		})
+
+		// Clear mocks for next action
+		jest.clearAllMocks()
+
+		// Resume session should trigger toast
+		await act(async () => {
+			await user.click(screen.getByTestId('resume'))
+		})
+
+		expect(toast.success).toHaveBeenCalledWith('▶️ Session resumed', {
+			id: 'session-resumed',
+			duration: 2000
+		})
+
+		// Clear mocks for next action
+		jest.clearAllMocks()
+
+		// End session should trigger toast with stats
+		await act(async () => {
+			await user.click(screen.getByTestId('end'))
+		})
+
+		expect(toast.success).toHaveBeenCalledWith(
+			expect.stringMatching(/🏁 Session ended! \d+ orders, \$[\d.]+ in sales/),
+			{
+				id: 'session-ended',
+				duration: 5000
+			}
+		)
+	})
+
+	it('triggers toast notifications for sales goal changes', async () => {
+		const user = userEvent.setup()
+		renderWithProvider()
+
+		// Clear any initial mock calls
+		jest.clearAllMocks()
+
+		// Set sales goal should trigger toast
+		await act(async () => {
+			await user.click(screen.getByTestId('setSalesGoal'))
+		})
+
+		expect(toast).toHaveBeenCalledWith('🎯 Sales goal set to $500.00', {
+			id: 'goal-set',
+			duration: 2000
 		})
 	})
 })

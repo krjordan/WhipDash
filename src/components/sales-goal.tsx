@@ -7,7 +7,7 @@ import { useSession } from '@/lib/session-context'
 import { ConfettiCelebration } from '@/components/confetti-celebration'
 
 export function SalesGoal() {
-	const { sessionState, salesGoalState } = useSession()
+	const { sessionState, salesGoalState, shopifyData } = useSession()
 	const [showConfetti, setShowConfetti] = React.useState(false)
 	const [hasReachedSalesGoal, setHasReachedSalesGoal] = React.useState(false)
 
@@ -15,6 +15,7 @@ export function SalesGoal() {
 	React.useEffect(() => {
 		if (
 			sessionState.isStarted &&
+			sessionState.isRunning &&
 			salesGoalState.currentAmount >= salesGoalState.goalAmount &&
 			!hasReachedSalesGoal
 		) {
@@ -25,16 +26,24 @@ export function SalesGoal() {
 		salesGoalState.currentAmount,
 		salesGoalState.goalAmount,
 		sessionState.isStarted,
+		sessionState.isRunning,
 		hasReachedSalesGoal
 	])
 
-	// Reset goal tracking when session starts/ends
+	// Reset goal tracking when session starts/ends or goal changes
 	React.useEffect(() => {
-		if (!sessionState.isStarted) {
+		if (
+			!sessionState.isStarted ||
+			salesGoalState.currentAmount < salesGoalState.goalAmount
+		) {
 			setHasReachedSalesGoal(false)
 			setShowConfetti(false)
 		}
-	}, [sessionState.isStarted])
+	}, [
+		sessionState.isStarted,
+		salesGoalState.currentAmount,
+		salesGoalState.goalAmount
+	])
 
 	const formatCurrency = (amount: number) => {
 		return new Intl.NumberFormat('en-US', {
@@ -145,6 +154,10 @@ export function SalesGoal() {
 							className={`h-2 w-2 rounded-full ${
 								!sessionState.isStarted
 									? 'bg-gray-400'
+									: shopifyData.error
+									? 'bg-red-500'
+									: shopifyData.loading
+									? 'bg-orange-500 animate-pulse'
 									: salesGoalState.currentAmount >= salesGoalState.goalAmount
 									? 'bg-green-500 animate-pulse'
 									: sessionState.isRunning
@@ -155,13 +168,38 @@ export function SalesGoal() {
 						<span className="text-xs text-muted-foreground">
 							{!sessionState.isStarted
 								? 'Waiting for Session'
+								: shopifyData.error
+								? 'Shopify Connection Error'
+								: shopifyData.loading && sessionState.isRunning
+								? 'Loading Sales Data...'
 								: salesGoalState.currentAmount >= salesGoalState.goalAmount
 								? 'Goal Achieved!'
 								: sessionState.isRunning
-								? 'Tracking Sales'
+								? shopifyData.lastUpdated
+									? 'Live Shopify Data'
+									: 'Tracking Sales'
 								: 'Session Paused'}
 						</span>
 					</div>
+
+					{/* Shopify data indicator - only show if we have valid Shopify data */}
+					{sessionState.isStarted &&
+						shopifyData.lastUpdated &&
+						!shopifyData.error && (
+							<div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground">
+								<div className="h-1 w-1 rounded-full bg-green-500" />
+								<span>
+									Last updated: {shopifyData.lastUpdated.toLocaleTimeString()}
+								</span>
+							</div>
+						)}
+
+					{/* Error message */}
+					{sessionState.isStarted && shopifyData.error && (
+						<div className="mt-2 p-2 rounded bg-red-50 border border-red-200">
+							<p className="text-xs text-red-600">{shopifyData.error}</p>
+						</div>
+					)}
 				</CardContent>
 			</Card>
 
