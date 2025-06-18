@@ -50,7 +50,8 @@ export function LiveDuration() {
 		endSession,
 		salesGoalState,
 		setSalesGoal,
-		resetSales
+		resetSales,
+		resetOrders
 	} = useSession()
 
 	React.useEffect(() => {
@@ -132,6 +133,7 @@ export function LiveDuration() {
 		setHasReachedGoal(false)
 		setShowConfetti(false)
 		resetSales()
+		resetOrders()
 		startSession()
 	}
 
