@@ -179,6 +179,52 @@ if (process.env.ANALYZE === 'true') {
    - Add debug output with `echo` commands
    - Use `continue-on-error: true` for non-critical steps
 
+## Shopify Integration Issues
+
+### "Missing required Shopify environment variables"
+
+**Cause:** Environment variables not set or incorrectly named
+
+**Solutions:**
+
+1. Verify `.env.local` file exists (not `.env.example`)
+2. Check all required variables are set:
+   ```bash
+   SHOPIFY_API_KEY=your_key
+   SHOPIFY_API_SECRET=your_secret
+   SHOPIFY_SHOP=your-store.myshopify.com
+   SHOPIFY_ACCESS_TOKEN=your_token
+   HOST_NAME=http://localhost:3000
+   NODE_ENV=development
+   ```
+3. Restart your development server after changes
+
+### "Failed to fetch orders" / API Errors
+
+**Cause:** Invalid credentials or insufficient permissions
+
+**Solutions:**
+
+1. Verify your Shopify custom app has `read_orders` scope
+2. Check that your access token was copied correctly (it's only shown once)
+3. Ensure your store domain includes `.myshopify.com`
+4. Test credentials by making a manual API call:
+   ```bash
+   curl -X GET "https://your-store.myshopify.com/admin/api/2024-01/orders.json" \
+     -H "X-Shopify-Access-Token: your_access_token"
+   ```
+
+### "Unauthorized" or CORS Errors
+
+**Cause:** Incorrect HOST_NAME or app configuration
+
+**Solutions:**
+
+1. Update HOST_NAME to match your actual domain
+2. For local dev: `HOST_NAME=http://localhost:3000`
+3. For production: `HOST_NAME=https://yourdomain.vercel.app`
+4. Ensure your Shopify app's hostname settings match
+
 ## Getting Help
 
 If issues persist:
@@ -187,6 +233,7 @@ If issues persist:
 2. Review recent changes that might have introduced issues
 3. Test locally with exact CI environment setup
 4. Check for known issues in dependencies
+5. **For Shopify issues:** Verify your custom app setup in Shopify Admin
 
 ## Quick Fixes
 

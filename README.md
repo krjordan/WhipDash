@@ -1,67 +1,239 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ZestDash 🚀
 
-## Getting Started
+[![CI/CD Pipeline](https://github.com/krjordan/zestdash/workflows/CI%2FCD%20Pipeline/badge.svg)](https://github.com/krjordan/zestdash/actions/workflows/ci.yml) [![Deploy to Production](https://github.com/krjordan/zestdash/workflows/Deploy%20to%20Production/badge.svg)](https://github.com/krjordan/zestdash/actions/workflows/deploy.yml) [![Code Quality](https://github.com/krjordan/zestdash/workflows/Code%20Quality/badge.svg)](https://github.com/krjordan/zestdash/actions/workflows/code-quality.yml) [![codecov](https://codecov.io/gh/krjordan/zestdash/branch/main/graph/badge.svg)](https://codecov.io/gh/krjordan/zestdash) [![Known Vulnerabilities](https://snyk.io/test/github/krjordan/zestdash/badge.svg)](https://snyk.io/test/github/krjordan/zestdash)
 
-First, run the development server:
+An open source **live/event sales dashboard** for Shopify stores built with Next.js, TypeScript, and Tailwind CSS. Get real-time insights into your store's performance with beautiful, responsive dashboards.
+
+> **Note**: This repository will remain **completely open source**. A premium hosted version with additional features will be available separately.
+
+## ✨ Features
+
+- 📊 **Real-time Sales Tracking** - Live order updates from your Shopify store
+- 🎯 **Order Analytics** - Detailed financial breakdowns and totals
+- 🎨 **Modern UI** - Beautiful, responsive design with dark/light mode
+- ⚡ **High Performance** - Built with Next.js 15 and React 19
+- 🔄 **Auto-refresh** - Live data updates every 30 seconds during active sessions
+- 🛡️ **Type Safe** - Full TypeScript implementation
+- 🧪 **Well Tested** - Comprehensive test suite with Jest and Testing Library
+- 📱 **Mobile Friendly** - Responsive design works on all devices
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+- Node.js 18+
+- npm, yarn, pnpm, or bun
+- A Shopify store with API access
+
+### 1. Clone and Install
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/yourusername/zestdash.git
+cd zestdash
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Set Up Environment Variables
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Copy the example environment file and configure your Shopify credentials:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+cp .env.example .env.local
+```
 
-## Shopify API Integration
-
-This application includes live Shopify integration for real-time sales and order tracking. When a session is started, the app will automatically fetch and display live data from your Shopify store.
-
-### Environment Variables
-
-Create a `.env.local` file in the root directory with the following variables:
+Edit `.env.local` with your Shopify store details:
 
 ```bash
 SHOPIFY_API_KEY=your_shopify_api_key_here
 SHOPIFY_API_SECRET=your_shopify_api_secret_here
-SHOPIFY_SHOP=your-shop-name.myshopify.com
+SHOPIFY_SHOP=your-store-name.myshopify.com
 SHOPIFY_ACCESS_TOKEN=your_shopify_access_token_here
 HOST_NAME=http://localhost:3000
 NODE_ENV=development
 ```
 
-### Features
+### 3. Run Development Server
 
-- **Live Sales Tracking**: Real-time sales data updates from Shopify orders
-- **Order Count Monitoring**: Live order count with automatic refresh during active sessions
-- **Backward Compatibility**: Falls back to local state when Shopify API is unavailable
-- **Error Handling**: Graceful error handling with user-friendly error messages
-- **Auto-refresh**: Polls Shopify API every 30 seconds during live sessions
+```bash
+npm run dev
+```
 
-### API Endpoints
+Open [http://localhost:3000](http://localhost:3000) to see your dashboard!
+
+## 🔧 Shopify Setup Guide
+
+To connect your Shopify store, you'll need to create a custom app and get API credentials:
+
+### Step 1: Create a Custom App
+
+1. Go to your Shopify Admin → **Settings** → **Apps and sales channels**
+2. Click **Develop apps** → **Create an app**
+3. Name your app (e.g., "My Sales Dashboard")
+
+### Step 2: Configure API Scopes
+
+1. Click **Configure Admin API scopes**
+2. Enable the following scopes:
+   - `read_orders` - Required for order data
+
+### Step 3: Generate Credentials
+
+1. Click **API credentials** tab
+2. Note down your **API key** and **API secret key**
+3. Click **Install app** to generate an **Admin API access token**
+
+### Step 4: Update Environment Variables
+
+Use the credentials in your `.env.local` file:
+
+```bash
+SHOPIFY_API_KEY=your_api_key_from_step_3
+SHOPIFY_API_SECRET=your_api_secret_from_step_3
+SHOPIFY_SHOP=your-store.myshopify.com
+SHOPIFY_ACCESS_TOKEN=your_access_token_from_step_3
+```
+
+## 📦 Available Scripts
+
+```bash
+npm run dev          # Start development server with Turbopack
+npm run build        # Build for production
+npm run start        # Start production server
+npm run lint         # Run ESLint
+npm run lint:fix     # Run ESLint with auto-fix
+npm run type-check   # Run TypeScript type checking
+npm run test         # Run tests
+npm run test:watch   # Run tests in watch mode
+npm run test:coverage # Run tests with coverage
+npm run analyze      # Analyze bundle size
+npm run ci           # Run all CI checks locally
+```
+
+## 🌐 Deployment
+
+### Deploy to Vercel (Recommended)
+
+1. **Push to GitHub** and connect your repository to Vercel
+2. **Set Environment Variables** in your Vercel dashboard:
+   ```bash
+   SHOPIFY_API_KEY=your_api_key
+   SHOPIFY_API_SECRET=your_api_secret
+   SHOPIFY_SHOP=your-store.myshopify.com
+   SHOPIFY_ACCESS_TOKEN=your_access_token
+   HOST_NAME=https://yourdomain.vercel.app
+   NODE_ENV=production
+   ```
+3. **Deploy** - Vercel will automatically build and deploy your app
+
+### Other Deployment Options
+
+The app can be deployed to any platform that supports Next.js:
+
+- **Netlify**: Set the same environment variables in your site settings
+- **Railway**: Add environment variables in your project settings
+- **DigitalOcean App Platform**: Configure environment variables in the app spec
+- **Docker**: Build a container and set environment variables at runtime
+
+Just ensure all environment variables are properly configured on your chosen platform.
+
+## 🏗️ Project Structure
+
+```
+zestdash/
+├── src/
+│   ├── app/                # Next.js 13+ App Router
+│   │   ├── api/           # API routes
+│   │   │   ├── health/    # Health check endpoint
+│   │   │   └── orders/    # Orders API endpoints
+│   │   ├── globals.css    # Global styles
+│   │   ├── layout.tsx     # Root layout
+│   │   └── page.tsx       # Home page
+│   ├── components/        # React components
+│   │   ├── ui/           # shadcn/ui components
+│   │   └── [components]  # Custom dashboard components
+│   ├── lib/              # Utility libraries
+│   │   ├── shopify.ts    # Shopify API client
+│   │   └── utils.ts      # Helper utilities
+│   └── types/            # TypeScript type definitions
+├── docs/                 # Documentation
+├── public/              # Static assets
+└── [config files]       # Various config files
+```
+
+## 🧪 Testing
+
+We maintain comprehensive test coverage:
+
+```bash
+npm run test              # Run all tests
+npm run test:coverage     # Run with coverage report
+npm run test:watch        # Run in watch mode
+```
+
+Tests include:
+
+- **Unit tests** for components and utilities
+- **Integration tests** for API endpoints
+- **API mocking** for Shopify integration
+- **Accessibility testing** in CI/CD
+
+## 🛠️ Development
+
+### Code Quality
+
+This project uses:
+
+- **ESLint** with Next.js config
+- **TypeScript** for type safety
+- **Prettier** for code formatting (via ESLint)
+- **Jest** for testing
+- **GitHub Actions** for CI/CD
+
+### Contributing
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Make your changes and add tests
+4. Run the full CI suite: `npm run ci`
+5. Commit using conventional commits: `git commit -m "feat: add amazing feature"`
+6. Push and create a Pull Request
+
+## 🔍 API Endpoints
 
 - `GET /api/health` - API health check
+- `GET /api/orders/totals` - Fetch orders with financial breakdown
+  - Query params: `today`, `created_at_min`, `created_at_max`
 
-- `GET /api/orders/totals` - Fetch orders with detailed financial breakdown
+## 🚨 Troubleshooting
 
-## Learn More
+Having issues? Check our [troubleshooting guide](./docs/TROUBLESHOOTING.md) for common problems and solutions.
 
-To learn more about Next.js, take a look at the following resources:
+### Common Issues
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. **"Missing required Shopify environment variables"**
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+   - Ensure all variables in `.env.local` are set correctly
+   - Check that your `.env.local` file exists and is not `.env.example`
 
-## Deploy on Vercel
+2. **"Failed to fetch orders"**
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+   - Verify your Shopify credentials are correct
+   - Ensure your custom app has the `read_orders` scope
+   - Check that your store domain is correct (include `.myshopify.com`)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+3. **Build or deployment issues**
+   - See [CI/CD Setup Guide](./docs/CI-CD-SETUP.md)
+
+## 📄 License
+
+This project is open source and available under the [MIT License](LICENSE).
+
+## 🤝 Support
+
+- 📖 [Documentation](./docs/)
+- 🐛 [Issue Tracker](https://github.com/yourusername/zestdash/issues)
+- 💬 [Discussions](https://github.com/yourusername/zestdash/discussions)
+
+---
+
+**Built with ❤️ by the open source community**
