@@ -1,6 +1,6 @@
-# ZestDash 🚀
+# WhipDash 🚀
 
-[![CI/CD Pipeline](https://github.com/krjordan/zestdash/workflows/CI%2FCD%20Pipeline/badge.svg)](https://github.com/krjordan/zestdash/actions/workflows/ci.yml) [![Deploy to Production](https://github.com/krjordan/zestdash/workflows/Deploy%20to%20Production/badge.svg)](https://github.com/krjordan/zestdash/actions/workflows/deploy.yml) [![Code Quality](https://github.com/krjordan/zestdash/workflows/Code%20Quality/badge.svg)](https://github.com/krjordan/zestdash/actions/workflows/code-quality.yml) [![codecov](https://codecov.io/gh/krjordan/zestdash/branch/main/graph/badge.svg)](https://codecov.io/gh/krjordan/zestdash) [![Known Vulnerabilities](https://snyk.io/test/github/krjordan/zestdash/badge.svg)](https://snyk.io/test/github/krjordan/zestdash)
+[![CI/CD Pipeline](https://github.com/krjordan/whipdash/workflows/CI%2FCD%20Pipeline/badge.svg)](https://github.com/krjordan/whipdash/actions/workflows/ci.yml) [![Deploy to Production](https://github.com/krjordan/whipdash/workflows/Deploy%20to%20Production/badge.svg)](https://github.com/krjordan/whipdash/actions/workflows/deploy.yml) [![Code Quality](https://github.com/krjordan/whipdash/workflows/Code%20Quality/badge.svg)](https://github.com/krjordan/whipdash/actions/workflows/code-quality.yml) [![codecov](https://codecov.io/gh/krjordan/whipdash/branch/main/graph/badge.svg)](https://codecov.io/gh/krjordan/whipdash) [![Known Vulnerabilities](https://snyk.io/test/github/krjordan/whipdash/badge.svg)](https://snyk.io/test/github/krjordan/whipdash)
 
 An open source **live/event sales dashboard** for Shopify stores built with Next.js, TypeScript, and Tailwind CSS. Get real-time insights into your store's performance with beautiful, responsive dashboards.
 
@@ -28,8 +28,8 @@ An open source **live/event sales dashboard** for Shopify stores built with Next
 ### 1. Clone and Install
 
 ```bash
-git clone https://github.com/yourusername/zestdash.git
-cd zestdash
+git clone https://github.com/yourusername/whipdash.git
+cd whipdash
 npm install
 ```
 
@@ -139,7 +139,7 @@ Just ensure all environment variables are properly configured on your chosen pla
 ## 🏗️ Project Structure
 
 ```
-zestdash/
+whipdash/
 ├── src/
 │   ├── app/                # Next.js 13+ App Router
 │   │   ├── api/           # API routes
@@ -231,9 +231,5 @@ This project is open source and available under the [MIT License](LICENSE).
 ## 🤝 Support
 
 - 📖 [Documentation](./docs/)
-- 🐛 [Issue Tracker](https://github.com/yourusername/zestdash/issues)
-- 💬 [Discussions](https://github.com/yourusername/zestdash/discussions)
-
----
-
-**Built with ❤️ by the open source community**
+- 🐛 [Issue Tracker](https://github.com/yourusername/whipdash/issues)
+- 💬 [Discussions](https://github.com/yourusername/whipdash/discussions)

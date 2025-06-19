@@ -30,7 +30,7 @@ export default function Dashboard() {
 				<header className="border-b border-border bg-card">
 					<div className="container mx-auto px-4 py-4 flex items-center justify-between">
 						<div>
-							<h1 className="text-2xl font-bold text-foreground">ZestDash</h1>
+							<h1 className="text-2xl font-bold text-foreground">WhipDash</h1>
 							<p className="text-sm text-muted-foreground">
 								Live Sales Dashboard
 							</p>

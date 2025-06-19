@@ -1,10 +1,10 @@
-# Contributing to ZestDash 🤝
+# Contributing to WhipDash 🤝
 
-Thank you for your interest in contributing to ZestDash! This project is **completely open source** and we welcome contributions from developers of all skill levels.
+Thank you for your interest in contributing to WhipDash! This project is **completely open source** and we welcome contributions from developers of all skill levels.
 
 ## 🎯 How to Contribute
 
-There are many ways to contribute to ZestDash:
+There are many ways to contribute to WhipDash:
 
 - 🐛 **Report bugs** - Help us identify and fix issues
 - 💡 **Suggest features** - Share ideas for new functionality
@@ -19,11 +19,11 @@ There are many ways to contribute to ZestDash:
 
 ```bash
 # Fork the repository on GitHub, then clone your fork
-git clone https://github.com/YOUR_USERNAME/zestdash.git
-cd zestdash
+git clone https://github.com/YOUR_USERNAME/whipdash.git
+cd whipdash
 
 # Add the original repository as upstream
-git remote add upstream https://github.com/ORIGINAL_OWNER/zestdash.git
+git remote add upstream https://github.com/ORIGINAL_OWNER/whipdash.git
 ```
 
 ### 2. Set Up Development Environment
@@ -191,7 +191,7 @@ Look for issues labeled `good first issue` - these are perfect for new contribut
 ## 🏗️ Project Structure
 
 ```
-zestdash/
+whipdash/
 ├── src/
 │   ├── app/              # Next.js App Router
 │   │   ├── api/         # API routes
@@ -230,9 +230,9 @@ npm run analyze      # Analyze bundle size
 
 ## ❓ Questions?
 
-- 💬 [GitHub Discussions](https://github.com/OWNER/zestdash/discussions) - Ask questions and share ideas
+- 💬 [GitHub Discussions](https://github.com/OWNER/whipdash/discussions) - Ask questions and share ideas
 - 📖 [Documentation](./docs/) - Check our guides and API docs
-- 🐛 [Issues](https://github.com/OWNER/zestdash/issues) - Report bugs or request features
+- 🐛 [Issues](https://github.com/OWNER/whipdash/issues) - Report bugs or request features
 
 ## 🙏 Recognition
 
@@ -245,4 +245,4 @@ Contributors are recognized in:
 
 ---
 
-**Thank you for helping make ZestDash better! 🎉**
+**Thank you for helping make WhipDash better! 🎉**
