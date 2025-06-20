@@ -1,5 +1,6 @@
 import React from 'react'
-import { render, screen, act } from '@testing-library/react'
+import { render, act } from '@testing-library/react'
+import { screen } from '@testing-library/dom'
 import userEvent from '@testing-library/user-event'
 import '@testing-library/jest-dom'
 import { SalesGoal } from '../sales-goal'
@@ -320,7 +321,7 @@ describe('SalesGoal Component', () => {
 		expect(screen.getByText('$300.00')).toBeInTheDocument()
 		expect(screen.getByText('Goal: $250.00')).toBeInTheDocument()
 		expect(
-			screen.getByText((content, element) => {
+			screen.getByText((content: string, element: Element | null) => {
 				// Handle text split across multiple elements
 				return element?.textContent === '120% of goal ($0.00 remaining)'
 			})
