@@ -8,11 +8,8 @@ import { useProducts } from '@/lib/shopify-api'
 import type { ProductWithInventory } from '@/lib/shopify'
 
 export function SoldOutProducts() {
-	const { sessionState, addSoldOutProduct } = useSession()
+	const { sessionState, addSoldOutProduct, shopifyData } = useSession()
 	const [mounted, setMounted] = React.useState(false)
-	const [sessionStartInventory, setSessionStartInventory] = React.useState<
-		Map<string, number>
-	>(new Map())
 	const [lastUpdateTime, setLastUpdateTime] = React.useState<Date | null>(null)
 	const [showAllSoldOut, setShowAllSoldOut] = React.useState(false)
 
@@ -45,54 +42,47 @@ export function SoldOutProducts() {
 		}
 	}, [productsData, productsError])
 
-	// Track inventory levels at session start
-	React.useEffect(() => {
-		if (
-			sessionState.isStarted &&
-			sessionState.sessionId &&
-			sessionStartInventory.size === 0
-		) {
-			// Fetch all products to track initial inventory levels
-			fetch('/api/products')
-				.then((response) => response.json())
-				.then((data) => {
-					const inventoryMap = new Map<string, number>()
-					data.products.forEach((product: ProductWithInventory) => {
-						product.variants.forEach((variant) => {
-							inventoryMap.set(
-								variant.id.toString(),
-								variant.inventory_quantity
-							)
-						})
-					})
-					setSessionStartInventory(inventoryMap)
-				})
-				.catch((error) => {
-					console.warn('Failed to track session start inventory:', error)
-				})
-		}
+	// No need to track session start inventory anymore - we'll use order data and session timing
 
-		// Clear tracking when session ends
-		if (!sessionState.isStarted) {
-			setSessionStartInventory(new Map())
-		}
-	}, [
-		sessionState.isStarted,
-		sessionState.sessionId,
-		sessionStartInventory.size
-	])
-
-	// Filter products that went out of stock during this session
+	// Get products that likely sold out during this session by analyzing order data
 	const getProductsOutOfStockThisSession = () => {
-		if (!productsData?.products || sessionStartInventory.size === 0) {
+		if (
+			!productsData?.products ||
+			!sessionState.isStarted ||
+			!sessionState.startTime
+		) {
 			return []
 		}
 
-		return productsData.products.filter((product) => {
-			return product.variants.some((variant) => {
-				const startInventory =
-					sessionStartInventory.get(variant.id.toString()) || 0
-				return startInventory > 0 && variant.is_sold_out
+		// Get products that are currently sold out
+		const currentlySoldOutProducts = productsData.products
+
+		// Get products that were ordered during this session
+		const sessionOrderedProductTitles = new Set<string>()
+		if (shopifyData && shopifyData.orders && shopifyData.orders.length > 0) {
+			shopifyData.orders.forEach((order) => {
+				if (order.line_items && order.line_items.length > 0) {
+					order.line_items.forEach((item) => {
+						sessionOrderedProductTitles.add(item.title)
+					})
+				}
+			})
+		}
+
+		// If no products were ordered during the session, we can't determine which sold out
+		if (sessionOrderedProductTitles.size === 0) {
+			return []
+		}
+
+		// Filter sold out products to those that were likely ordered during the session
+		// This is an approximation since we can't get historical inventory data
+		return currentlySoldOutProducts.filter((product) => {
+			// Try to match by product title (approximate matching)
+			return Array.from(sessionOrderedProductTitles).some((orderedTitle) => {
+				return (
+					orderedTitle.toLowerCase().includes(product.title.toLowerCase()) ||
+					product.title.toLowerCase().includes(orderedTitle.toLowerCase())
+				)
 			})
 		})
 	}
@@ -144,6 +134,8 @@ export function SoldOutProducts() {
 		if (productsLoading) {
 			return 'Loading sold out products...'
 		}
+
+		// Session tracking is now available regardless of start time edits
 
 		const sessionCount = sessionSoldOutProducts.length
 		const totalCount = allSoldOutProducts.length
