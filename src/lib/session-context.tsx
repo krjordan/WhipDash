@@ -6,7 +6,8 @@ import React, {
 	useState,
 	ReactNode,
 	useEffect,
-	useRef
+	useRef,
+	useMemo
 } from 'react'
 import toast from 'react-hot-toast'
 import { useOrderTotals, formatDateForApi } from './shopify-api'
@@ -293,8 +294,20 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 		(process.env.NODE_ENV === 'test' ||
 			process.env.JEST_WORKER_ID !== undefined)
 
-	// Get last 7 days date range for more comprehensive testing
-	const dateRange = getLast7DaysDateRange()
+	// Calculate date range based on session state
+	const dateRange = useMemo(() => {
+		if (sessionState.isStarted && sessionState.startTime) {
+			// When session is active, fetch orders from session start date to allow filtering
+			const sessionDate = new Date(sessionState.startTime)
+			return {
+				start: formatDateForApi(sessionDate),
+				end: undefined // Don't set end to include all orders from session start onwards
+			}
+		} else {
+			// When no session is active, use last 7 days for dashboard viewing
+			return getLast7DaysDateRange()
+		}
+	}, [sessionState.isStarted, sessionState.startTime])
 
 	const {
 		data: shopifyOrderData,
@@ -303,7 +316,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 		refetch: refetchShopifyData
 	} = useOrderTotals({
 		created_at_min: dateRange.start,
-		// Removed created_at_max to avoid filtering out recent orders from today
+		created_at_max: dateRange.end,
 		refreshInterval:
 			sessionState.isRunning && !isTestEnvironment ? 30000 : undefined, // 30 seconds when live
 		enabled: sessionState.isStarted && !isTestEnvironment
@@ -319,11 +332,53 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 		}
 	}, [shopifyOrderData, shopifyError])
 
-	// Derived shopify data state
+	// Filter orders to only include those from the current session
+	const sessionFilteredOrders = useMemo(() => {
+		if (
+			!shopifyOrderData?.orders ||
+			!sessionState.isStarted ||
+			!sessionState.startTime
+		) {
+			return shopifyOrderData?.orders || []
+		}
+
+		const sessionStartTime = new Date(sessionState.startTime)
+		return shopifyOrderData.orders.filter((order) => {
+			const orderCreatedTime = new Date(order.created_at)
+			return orderCreatedTime >= sessionStartTime
+		})
+	}, [shopifyOrderData?.orders, sessionState.isStarted, sessionState.startTime])
+
+	// Calculate session-specific totals
+	const sessionTotals = useMemo(() => {
+		if (!sessionState.isStarted || sessionFilteredOrders.length === 0) {
+			return {
+				orderCount: 0,
+				totalSales: 0
+			}
+		}
+
+		const totalSales = sessionFilteredOrders.reduce(
+			(sum, order) => sum + order.total_price,
+			0
+		)
+		return {
+			orderCount: sessionFilteredOrders.length,
+			totalSales
+		}
+	}, [sessionFilteredOrders, sessionState.isStarted])
+
+	// Derived shopify data state - use session-filtered data when session is active
 	const shopifyData = {
-		orderCount: shopifyOrderData?.summary?.orderCount || 0,
-		totalSales: shopifyOrderData?.summary?.finalTotalPrice || 0,
-		orders: shopifyOrderData?.orders || [], // Include the actual order breakdown data
+		orderCount: sessionState.isStarted
+			? sessionTotals.orderCount
+			: shopifyOrderData?.summary?.orderCount || 0,
+		totalSales: sessionState.isStarted
+			? sessionTotals.totalSales
+			: shopifyOrderData?.summary?.finalTotalPrice || 0,
+		orders: sessionState.isStarted
+			? sessionFilteredOrders
+			: shopifyOrderData?.orders || [],
 		loading: shopifyLoading,
 		error: shopifyError,
 		lastUpdated: shopifyLastUpdate
@@ -343,8 +398,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
 	// Toast notification for new orders
 	useEffect(() => {
-		if (shopifyOrderData && sessionState.isStarted && sessionState.isRunning) {
-			const currentOrderCount = shopifyOrderData.summary.orderCount
+		if (sessionState.isStarted && sessionState.isRunning) {
+			const currentOrderCount = sessionTotals.orderCount
 
 			// Only notify if order count increased and we have a previous count
 			if (
@@ -367,12 +422,16 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
 			previousOrderCount.current = currentOrderCount
 		}
-	}, [shopifyOrderData, sessionState.isStarted, sessionState.isRunning])
+	}, [sessionTotals.orderCount, sessionState.isStarted, sessionState.isRunning])
 
 	// Detect new Shopify orders and persist them
 	useEffect(() => {
-		if (shopifyOrderData && sessionState.isStarted && sessionState.sessionId) {
-			const newShopifyOrders = shopifyOrderData.orders.filter((order) => {
+		if (
+			sessionState.isStarted &&
+			sessionState.sessionId &&
+			sessionFilteredOrders.length > 0
+		) {
+			const newShopifyOrders = sessionFilteredOrders.filter((order) => {
 				// Check if order is not already in current session
 				return !ordersState.currentSessionOrders.some(
 					(persistedOrder) => persistedOrder.id === order.id.toString()
@@ -405,7 +464,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 			}
 		}
 	}, [
-		shopifyOrderData,
+		sessionFilteredOrders,
 		sessionState.isStarted,
 		sessionState.sessionId,
 		ordersState.currentSessionOrders
@@ -474,28 +533,28 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 		previousError.current = shopifyError
 	}, [shopifyError, sessionState.isStarted])
 
-	// Update local orders state when Shopify data changes
+	// Update local orders state when session totals change
 	useEffect(() => {
-		if (shopifyOrderData && sessionState.isStarted) {
+		if (sessionState.isStarted) {
 			setOrdersState((prev) => ({
 				...prev,
 				totalOrders: Math.max(
-					shopifyOrderData.summary.orderCount,
+					sessionTotals.orderCount,
 					prev.currentSessionOrders.length
 				)
 			}))
 		}
-	}, [shopifyOrderData, sessionState.isStarted])
+	}, [sessionTotals.orderCount, sessionState.isStarted])
 
-	// Update sales goal current amount from Shopify data
+	// Update sales goal current amount from session totals
 	useEffect(() => {
-		if (shopifyOrderData && sessionState.isStarted) {
+		if (sessionState.isStarted) {
 			setSalesGoalState((prev) => ({
 				...prev,
-				currentAmount: shopifyOrderData.summary.finalTotalPrice
+				currentAmount: sessionTotals.totalSales
 			}))
 		}
-	}, [shopifyOrderData, sessionState.isStarted])
+	}, [sessionTotals.totalSales, sessionState.isStarted])
 
 	// Duration tracking effect
 	useEffect(() => {
