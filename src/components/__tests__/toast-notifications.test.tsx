@@ -109,6 +109,22 @@ describe('Toast Notifications', () => {
 	beforeEach(() => {
 		// Clear all mocks before each test
 		jest.clearAllMocks()
+
+		// Clear localStorage to ensure clean session state between tests
+		window.localStorage.clear()
+
+		// Mock localStorage if not already mocked
+		if (!window.localStorage.getItem) {
+			Object.defineProperty(window, 'localStorage', {
+				value: {
+					getItem: jest.fn(() => null),
+					setItem: jest.fn(),
+					removeItem: jest.fn(),
+					clear: jest.fn()
+				},
+				writable: true
+			})
+		}
 	})
 
 	describe('Session Management Toasts', () => {

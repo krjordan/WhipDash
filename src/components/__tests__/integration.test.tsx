@@ -55,7 +55,7 @@ const SalesAndOrdersTestControls = () => {
 				Add $300
 			</button>
 			<button
-				onClick={addOrder}
+				onClick={() => addOrder()}
 				data-testid="add-order"
 			>
 				Add Order
@@ -79,6 +79,8 @@ const startSession = async (user: ReturnType<typeof userEvent.setup>) => {
 describe('LiveDuration and LiveStatusBadge Integration', () => {
 	beforeEach(() => {
 		jest.useFakeTimers()
+		// Clear localStorage to ensure clean state between tests
+		window.localStorage.clear()
 	})
 
 	afterEach(() => {
@@ -227,6 +229,8 @@ describe('LiveDuration and LiveStatusBadge Integration', () => {
 describe('LiveDuration, LiveStatusBadge, SalesGoal, and TotalOrders Integration', () => {
 	beforeEach(() => {
 		jest.useFakeTimers()
+		// Clear localStorage to ensure clean state between tests
+		window.localStorage.clear()
 	})
 
 	afterEach(() => {
@@ -329,9 +333,9 @@ describe('LiveDuration, LiveStatusBadge, SalesGoal, and TotalOrders Integration'
 		const endButton = screen.getByLabelText('End session')
 		await user.click(endButton)
 
-		// Both should reset
-		expect(screen.getByText('$0.00')).toBeInTheDocument() // Sales reset
-		expect(screen.getByText('0:00')).toBeInTheDocument() // Duration reset
+		// Both should show last session data (not reset to zero)
+		expect(screen.getByText('$100.00')).toBeInTheDocument() // Sales preserved
+		expect(screen.getByText('1:00')).toBeInTheDocument() // Duration preserved
 		expect(screen.getByText('Ready to Start')).toBeInTheDocument() // Duration status
 		expect(screen.getByText('Waiting for Session')).toBeInTheDocument() // Sales status
 	})
@@ -403,7 +407,7 @@ describe('LiveDuration, LiveStatusBadge, SalesGoal, and TotalOrders Integration'
 		const endButton = screen.getByLabelText('End session')
 		await user.click(endButton)
 
-		expect(screen.getByText('$0.00')).toBeInTheDocument() // Reset
+		expect(screen.getByText('$200.00')).toBeInTheDocument() // Preserved from session
 		expect(screen.queryByTestId('confetti')).not.toBeInTheDocument()
 
 		// Second session with different goal
@@ -529,13 +533,13 @@ describe('LiveDuration, LiveStatusBadge, SalesGoal, and TotalOrders Integration'
 		const endButton = screen.getByLabelText('End session')
 		await user.click(endButton)
 
-		// All should reset
-		expect(screen.getByText('$0.00')).toBeInTheDocument() // Sales reset
-		expect(screen.getByText('0')).toBeInTheDocument() // Orders reset to 0
-		expect(screen.getByText('0:00')).toBeInTheDocument() // Duration reset
+		// All should show last session data (preserved, not reset)
+		expect(screen.getByText('$100.00')).toBeInTheDocument() // Sales preserved
+		expect(screen.getByText('2')).toBeInTheDocument() // Orders preserved
+		expect(screen.getByText('1:00')).toBeInTheDocument() // Duration preserved
 		expect(screen.getByText('Ready to Start')).toBeInTheDocument() // Duration status
 		expect(screen.getByText('Waiting for Session')).toBeInTheDocument() // Sales status
-		expect(screen.getByText('-100% from last session')).toBeInTheDocument() // Orders shows comparison to last session
+		expect(screen.getByText('Same as last session')).toBeInTheDocument() // Orders preserved from last session
 	})
 
 	it('orders and sales work together but track independently', async () => {

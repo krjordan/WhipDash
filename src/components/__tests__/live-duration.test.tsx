@@ -26,6 +26,8 @@ const startSession = async (user: ReturnType<typeof userEvent.setup>) => {
 describe('LiveDuration Component', () => {
 	beforeEach(() => {
 		jest.useFakeTimers()
+		// Clear localStorage to ensure clean state between tests
+		window.localStorage.clear()
 	})
 
 	afterEach(() => {
@@ -39,9 +41,7 @@ describe('LiveDuration Component', () => {
 		expect(screen.getByText('Live Duration')).toBeInTheDocument()
 		expect(screen.getByText('0:00')).toBeInTheDocument()
 		expect(
-			screen.getByText((content: string, element: Element | null) => {
-				return element?.textContent === '0% of goal (120 min remaining)'
-			})
+			screen.getByText('Set up a session to begin tracking')
 		).toBeInTheDocument()
 		expect(screen.getByText('Ready to Start')).toBeInTheDocument()
 		expect(screen.getByText('Start Session')).toBeInTheDocument()
@@ -135,11 +135,8 @@ describe('LiveDuration Component', () => {
 
 		expect(screen.getByText('Ready to Start')).toBeInTheDocument()
 
-		// Timer should not advance when ended
-		act(() => {
-			jest.advanceTimersByTime(5000)
-		})
-		expect(screen.getByText('0:00')).toBeInTheDocument() // Should reset to 0:00
+		// Duration should be preserved when session ends (showing last session)
+		expect(screen.getByText('Last session: 0:10')).toBeInTheDocument()
 
 		// Should show start session button again
 		expect(screen.getByText('Start Session')).toBeInTheDocument()
@@ -226,10 +223,10 @@ describe('LiveDuration Component', () => {
 		const endButton = screen.getByLabelText('End session')
 		await user.click(endButton)
 
-		// Should be back to ready state
+		// Should be back to ready state but with different gray color due to session having ended
 		const readyIndicatorAfterEnd =
 			screen.getByText('Ready to Start').previousElementSibling
-		expect(readyIndicatorAfterEnd).toHaveClass('bg-gray-400')
+		expect(readyIndicatorAfterEnd).toHaveClass('bg-gray-500')
 	})
 
 	it('displays session info during active session', async () => {

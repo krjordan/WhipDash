@@ -10,9 +10,10 @@ export function OrderControls() {
 	const { sessionState, addOrder, addSale } = useSession()
 
 	const handleAddOrder = () => {
-		addOrder()
-		// Also add a random sale amount between $10-$200 for each order
+		// Generate a random sale amount between $10-$200 for each order
 		const randomSale = Math.floor(Math.random() * 191) + 10
+
+		addOrder(randomSale)
 		addSale(randomSale)
 
 		toast.success(`🛒 Test order added! +$${randomSale.toFixed(2)}`, {

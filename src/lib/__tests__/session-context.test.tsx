@@ -20,7 +20,10 @@ const TestComponent = () => {
 		addSale,
 		resetSales,
 		addOrder,
-		resetOrders
+		resetOrders,
+		showSessionModal,
+		openSessionModal,
+		closeSessionModal
 	} = useSession()
 
 	return (
@@ -29,6 +32,8 @@ const TestComponent = () => {
 			<div data-testid="isStarted">{sessionState.isStarted.toString()}</div>
 			<div data-testid="isRunning">{sessionState.isRunning.toString()}</div>
 			<div data-testid="isEnded">{sessionState.isEnded.toString()}</div>
+			<div data-testid="duration">{sessionState.duration}</div>
+			<div data-testid="showSessionModal">{showSessionModal.toString()}</div>
 
 			{/* Sales goal state */}
 			<div data-testid="goalAmount">{salesGoalState.goalAmount}</div>
@@ -91,7 +96,7 @@ const TestComponent = () => {
 
 			{/* Orders buttons */}
 			<button
-				onClick={addOrder}
+				onClick={() => addOrder()}
 				data-testid="addOrder"
 			>
 				Add Order
@@ -101,6 +106,20 @@ const TestComponent = () => {
 				data-testid="resetOrders"
 			>
 				Reset Orders
+			</button>
+
+			{/* Modal buttons */}
+			<button
+				onClick={openSessionModal}
+				data-testid="openModal"
+			>
+				Open Modal
+			</button>
+			<button
+				onClick={closeSessionModal}
+				data-testid="closeModal"
+			>
+				Close Modal
 			</button>
 		</div>
 	)
@@ -423,8 +442,8 @@ describe('SessionContext', () => {
 				await user.click(screen.getByTestId('end'))
 			})
 
-			// Current orders should be reset, last session should store the previous value
-			expect(screen.getByTestId('totalOrders')).toHaveTextContent('0')
+			// Current orders should be preserved for display, last session should store the value
+			expect(screen.getByTestId('totalOrders')).toHaveTextContent('3') // Data preserved
 			expect(screen.getByTestId('lastSessionOrders')).toHaveTextContent('3')
 		})
 
@@ -440,10 +459,11 @@ describe('SessionContext', () => {
 				await user.click(screen.getByTestId('end'))
 			})
 
-			expect(screen.getByTestId('totalOrders')).toHaveTextContent('0')
+			// Data is preserved after ending first session
+			expect(screen.getByTestId('totalOrders')).toHaveTextContent('2')
 			expect(screen.getByTestId('lastSessionOrders')).toHaveTextContent('2')
 
-			// Second session: 5 orders
+			// Second session: 5 orders (start resets current data)
 			await act(async () => {
 				await user.click(screen.getByTestId('start'))
 				await user.click(screen.getByTestId('addOrder'))
@@ -455,7 +475,7 @@ describe('SessionContext', () => {
 			})
 
 			// Last session should now be 5 (from second session)
-			expect(screen.getByTestId('totalOrders')).toHaveTextContent('0')
+			expect(screen.getByTestId('totalOrders')).toHaveTextContent('5')
 			expect(screen.getByTestId('lastSessionOrders')).toHaveTextContent('5')
 		})
 
@@ -572,6 +592,209 @@ describe('SessionContext', () => {
 		expect(toast).toHaveBeenCalledWith('🎯 Sales goal set to $500.00', {
 			id: 'goal-set',
 			duration: 2000
+		})
+	})
+
+	describe('Duration Tracking', () => {
+		beforeEach(() => {
+			jest.useFakeTimers()
+		})
+
+		afterEach(() => {
+			jest.runOnlyPendingTimers()
+			jest.useRealTimers()
+		})
+
+		it('initializes duration to 0', () => {
+			renderWithProvider()
+			expect(screen.getByTestId('duration')).toHaveTextContent('0')
+		})
+
+		it('tracks duration when session is running', async () => {
+			const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
+			renderWithProvider()
+
+			expect(screen.getByTestId('duration')).toHaveTextContent('0')
+
+			// Start session
+			await act(async () => {
+				await user.click(screen.getByTestId('start'))
+			})
+
+			expect(screen.getByTestId('duration')).toHaveTextContent('0')
+
+			// Fast-forward time by 5 seconds
+			act(() => {
+				jest.advanceTimersByTime(5000)
+			})
+
+			expect(screen.getByTestId('duration')).toHaveTextContent('5')
+
+			// Fast-forward another 3 seconds
+			act(() => {
+				jest.advanceTimersByTime(3000)
+			})
+
+			expect(screen.getByTestId('duration')).toHaveTextContent('8')
+		}, 10000)
+
+		it('pauses duration tracking when session is paused', async () => {
+			const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
+			renderWithProvider()
+
+			// Start session and let it run
+			await act(async () => {
+				await user.click(screen.getByTestId('start'))
+			})
+
+			act(() => {
+				jest.advanceTimersByTime(3000)
+			})
+
+			expect(screen.getByTestId('duration')).toHaveTextContent('3')
+
+			// Pause session
+			await act(async () => {
+				await user.click(screen.getByTestId('pause'))
+			})
+
+			// Time passes but duration shouldn't increase
+			act(() => {
+				jest.advanceTimersByTime(5000)
+			})
+
+			expect(screen.getByTestId('duration')).toHaveTextContent('3')
+		})
+
+		it('resumes duration tracking when session is resumed', async () => {
+			const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
+			renderWithProvider()
+
+			// Start, run, pause, resume
+			await act(async () => {
+				await user.click(screen.getByTestId('start'))
+			})
+
+			act(() => {
+				jest.advanceTimersByTime(2000)
+			})
+
+			await act(async () => {
+				await user.click(screen.getByTestId('pause'))
+			})
+
+			act(() => {
+				jest.advanceTimersByTime(5000) // This time shouldn't count
+			})
+
+			await act(async () => {
+				await user.click(screen.getByTestId('resume'))
+			})
+
+			// Duration should continue from where it left off
+			expect(screen.getByTestId('duration')).toHaveTextContent('2')
+
+			act(() => {
+				jest.advanceTimersByTime(3000)
+			})
+
+			expect(screen.getByTestId('duration')).toHaveTextContent('5')
+		})
+
+		it('preserves duration when session ends', async () => {
+			const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
+			renderWithProvider()
+
+			// Start and run session
+			await act(async () => {
+				await user.click(screen.getByTestId('start'))
+			})
+
+			act(() => {
+				jest.advanceTimersByTime(10000)
+			})
+
+			expect(screen.getByTestId('duration')).toHaveTextContent('10')
+
+			// End session
+			await act(async () => {
+				await user.click(screen.getByTestId('end'))
+			})
+
+			// Duration should be preserved
+			expect(screen.getByTestId('duration')).toHaveTextContent('10')
+		})
+
+		it('resets duration when new session starts', async () => {
+			const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
+			renderWithProvider()
+
+			// First session
+			await act(async () => {
+				await user.click(screen.getByTestId('start'))
+			})
+
+			act(() => {
+				jest.advanceTimersByTime(5000)
+			})
+
+			await act(async () => {
+				await user.click(screen.getByTestId('end'))
+			})
+
+			expect(screen.getByTestId('duration')).toHaveTextContent('5')
+
+			// Start new session - duration should reset
+			await act(async () => {
+				await user.click(screen.getByTestId('start'))
+			})
+
+			expect(screen.getByTestId('duration')).toHaveTextContent('0')
+		})
+	})
+
+	describe('Session Modal', () => {
+		beforeEach(() => {
+			jest.useFakeTimers()
+		})
+
+		afterEach(() => {
+			jest.runOnlyPendingTimers()
+			jest.useRealTimers()
+		})
+
+		it('initializes modal as closed', () => {
+			renderWithProvider()
+			expect(screen.getByTestId('showSessionModal')).toHaveTextContent('false')
+		})
+
+		it('opens modal when openSessionModal is called', async () => {
+			const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
+			renderWithProvider()
+
+			await act(async () => {
+				await user.click(screen.getByTestId('openModal'))
+			})
+
+			expect(screen.getByTestId('showSessionModal')).toHaveTextContent('true')
+		})
+
+		it('closes modal when closeSessionModal is called', async () => {
+			const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
+			renderWithProvider()
+
+			// Open then close
+			await act(async () => {
+				await user.click(screen.getByTestId('openModal'))
+			})
+
+			expect(screen.getByTestId('showSessionModal')).toHaveTextContent('true')
+
+			await act(async () => {
+				await user.click(screen.getByTestId('closeModal'))
+			})
+
+			expect(screen.getByTestId('showSessionModal')).toHaveTextContent('false')
 		})
 	})
 })

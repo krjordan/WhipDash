@@ -1,3 +1,5 @@
+'use client'
+
 import {
 	Card,
 	CardContent,
@@ -5,91 +7,127 @@ import {
 	CardHeader,
 	CardTitle
 } from '@/components/ui/card'
-import { PackageX } from 'lucide-react'
-import { ThemeToggle } from '@/components/theme-toggle'
+import { PackageX, Info, Play } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { LiveDuration } from '@/components/live-duration'
-import { LiveStatusBadge } from '@/components/live-status-badge'
 import { SalesGoal } from '@/components/sales-goal'
 import { TotalOrders } from '@/components/total-orders'
-import { SessionProvider } from '@/lib/session-context'
 import { RecentOrders } from '@/components/recent-orders'
+import { DashboardLayout } from '@/components/dashboard-layout'
+import { useSession } from '@/lib/session-context'
+import React from 'react'
+
+function DashboardContent() {
+	const { sessionState, ordersState, openSessionModal } = useSession()
+	const [mounted, setMounted] = React.useState(false)
+
+	React.useEffect(() => {
+		setMounted(true)
+	}, [])
+
+	const formatDate = (dateString: string) => {
+		if (!mounted) return ''
+		return new Date(dateString).toLocaleDateString('en-US', {
+			weekday: 'long',
+			month: 'short',
+			day: 'numeric',
+			hour: 'numeric',
+			minute: '2-digit'
+		})
+	}
+
+	return (
+		<main className="flex-1 p-6 bg-background overflow-auto">
+			{/* Skip to main content anchor */}
+			<div
+				id="main-content"
+				aria-hidden="true"
+				className="sr-only"
+			>
+				Main Dashboard Content
+			</div>
+
+			{/* Previous Session Banner */}
+			{mounted && !sessionState.isStarted && ordersState.lastSessionData && (
+				<div className="mb-6 p-4 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg">
+					<div className="flex items-center justify-between">
+						<div className="flex items-start gap-3">
+							<Info className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+							<div>
+								<h3 className="font-medium text-blue-900 dark:text-blue-100">
+									Viewing Previous Session Data
+								</h3>
+								<p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+									Last session ended on{' '}
+									{ordersState.lastSessionData.endTime &&
+										formatDate(ordersState.lastSessionData.endTime)}
+									. Start a new session to begin tracking live data.
+								</p>
+							</div>
+						</div>
+						<Button
+							onClick={openSessionModal}
+							className="bg-blue-600 hover:bg-blue-700 text-white"
+							size="sm"
+						>
+							<Play className="h-4 w-4 mr-2" />
+							Start New Session
+						</Button>
+					</div>
+				</div>
+			)}
+
+			<div className="grid gap-6">
+				{/* Stats Overview */}
+				<section aria-labelledby="stats-heading">
+					<h2
+						id="stats-heading"
+						className="sr-only"
+					>
+						Dashboard Statistics Overview
+					</h2>
+					<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+						<LiveDuration />
+
+						<SalesGoal />
+
+						<TotalOrders />
+					</div>
+				</section>
+
+				{/* Recent Activity */}
+				<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+					<div className="col-span-2">
+						<RecentOrders />
+					</div>
+
+					<Card>
+						<CardHeader>
+							<CardTitle className="flex items-center gap-2">
+								<PackageX className="h-5 w-5" />
+								Sold Out Products
+							</CardTitle>
+							<CardDescription>
+								Track products that are out of stock
+							</CardDescription>
+						</CardHeader>
+						<CardContent className="flex items-center justify-center min-h-[300px]">
+							<div className="text-center text-muted-foreground">
+								<PackageX className="h-12 w-12 mx-auto mb-4 opacity-50" />
+								<p className="text-lg font-medium">Coming Soon</p>
+							</div>
+						</CardContent>
+					</Card>
+				</div>
+			</div>
+		</main>
+	)
+}
 
 export default function Dashboard() {
 	return (
-		<SessionProvider>
-			<div className="min-h-screen bg-background">
-				{/* Skip to main content link for keyboard navigation */}
-				<a
-					href="#main-content"
-					className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-primary text-primary-foreground px-3 py-2 rounded-md z-50"
-				>
-					Skip to main content
-				</a>
-
-				{/* Header */}
-				<header className="border-b border-border bg-card">
-					<div className="container mx-auto px-4 py-4 flex items-center justify-between">
-						<div>
-							<h1 className="text-2xl font-bold text-foreground">WhipDash</h1>
-							<p className="text-sm text-muted-foreground">
-								Live Sales Dashboard
-							</p>
-						</div>
-						<div className="flex items-center gap-4">
-							<LiveStatusBadge />
-							<ThemeToggle />
-						</div>
-					</div>
-				</header>
-
-				{/* Main Dashboard */}
-				<main
-					id="main-content"
-					className="container mx-auto px-4 py-8"
-				>
-					<div className="grid gap-6">
-						{/* Stats Overview */}
-						<section aria-labelledby="stats-heading">
-							<h2
-								id="stats-heading"
-								className="sr-only"
-							>
-								Dashboard Statistics Overview
-							</h2>
-							<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-								<LiveDuration />
-
-								<SalesGoal />
-
-								<TotalOrders />
-							</div>
-						</section>
-
-						{/* Recent Activity */}
-						<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-							<RecentOrders />
-
-							<Card className="col-span-3">
-								<CardHeader>
-									<CardTitle className="flex items-center gap-2">
-										<PackageX className="h-5 w-5" />
-										Sold Out Products
-									</CardTitle>
-									<CardDescription>
-										Track products that are out of stock
-									</CardDescription>
-								</CardHeader>
-								<CardContent className="flex items-center justify-center min-h-[300px]">
-									<div className="text-center text-muted-foreground">
-										<PackageX className="h-12 w-12 mx-auto mb-4 opacity-50" />
-										<p className="text-lg font-medium">Coming Soon</p>
-									</div>
-								</CardContent>
-							</Card>
-						</div>
-					</div>
-				</main>
-			</div>
-		</SessionProvider>
+		<DashboardLayout>
+			<DashboardContent />
+		</DashboardLayout>
 	)
 }
