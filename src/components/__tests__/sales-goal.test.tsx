@@ -29,7 +29,8 @@ jest.mock('../confetti-celebration', () => ({
 
 // Helper component to manipulate session context in tests
 const TestSessionControls = () => {
-	const { startSession, endSession, setSalesGoal, addSale } = useSession()
+	const { startSession, endSession, setSalesGoal, addSale, resetSales } =
+		useSession()
 
 	return (
 		<div>
@@ -44,6 +45,12 @@ const TestSessionControls = () => {
 				data-testid="end-session"
 			>
 				End Session
+			</button>
+			<button
+				onClick={resetSales}
+				data-testid="reset-sales"
+			>
+				Reset Sales
 			</button>
 			<button
 				onClick={() => setSalesGoal(500)}
@@ -91,6 +98,8 @@ describe('SalesGoal Component', () => {
 	afterEach(() => {
 		jest.runOnlyPendingTimers()
 		jest.useRealTimers()
+		// Clear any localStorage state between tests
+		window.localStorage.clear()
 	})
 
 	it('renders with initial state', () => {
@@ -222,6 +231,11 @@ describe('SalesGoal Component', () => {
 	it('does not trigger confetti when goal is reached outside active session', async () => {
 		const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
 		renderWithSessionProvider(<SalesGoal />)
+
+		// Reset sales to ensure clean state
+		await act(async () => {
+			await user.click(screen.getByTestId('reset-sales'))
+		})
 
 		// Add sales without starting session
 		await act(async () => {

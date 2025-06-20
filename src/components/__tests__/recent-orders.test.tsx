@@ -144,11 +144,15 @@ describe('RecentOrders Component', () => {
 		).toHaveLength(2)
 	})
 
-	it('uses correct CSS classes for layout', () => {
+	it('renders with proper card structure', () => {
 		render(<TestComponent />)
 
-		// Check that the card has the correct column span
-		const card = screen.getByText('Recent Orders').closest('.col-span-4')
+		// Check that the component renders as a card
+		const titleElement = screen.getByText('Recent Orders')
+		expect(titleElement).toBeInTheDocument()
+
+		// The component itself doesn't have grid classes - those are applied by the parent layout
+		const card = titleElement.closest('[data-slot="card"]')
 		expect(card).toBeInTheDocument()
 	})
 

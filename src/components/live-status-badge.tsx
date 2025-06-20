@@ -2,11 +2,26 @@
 
 import { Badge } from '@/components/ui/badge'
 import { useSession } from '@/lib/session-context'
+import { useEffect, useState } from 'react'
 
 export function LiveStatusBadge() {
 	const { sessionState } = useSession()
+	const [mounted, setMounted] = useState(false)
+
+	useEffect(() => {
+		setMounted(true)
+	}, [])
 
 	const getStatusConfig = () => {
+		// Prevent hydration mismatches by showing default state until mounted
+		if (!mounted) {
+			return {
+				text: 'Ready',
+				className: 'text-blue-600 border-blue-600',
+				ariaLabel: 'Dashboard status: Ready to start session'
+			}
+		}
+
 		switch (sessionState.status) {
 			case 'live':
 				return {

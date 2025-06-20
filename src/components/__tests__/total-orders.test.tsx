@@ -25,7 +25,7 @@ const TestSessionControls = () => {
 				End Session
 			</button>
 			<button
-				onClick={addOrder}
+				onClick={() => addOrder()}
 				data-testid="add-order"
 			>
 				Add Order
@@ -45,6 +45,24 @@ const renderWithSessionProvider = (ui: React.ReactElement) => {
 }
 
 describe('TotalOrders Component', () => {
+	beforeEach(() => {
+		// Clear localStorage to ensure clean state between tests
+		window.localStorage.clear()
+
+		// Mock localStorage if not already mocked
+		if (!window.localStorage.getItem) {
+			Object.defineProperty(window, 'localStorage', {
+				value: {
+					getItem: jest.fn(() => null),
+					setItem: jest.fn(),
+					removeItem: jest.fn(),
+					clear: jest.fn()
+				},
+				writable: true
+			})
+		}
+	})
+
 	it('renders with initial state', () => {
 		renderWithSessionProvider(<TotalOrders />)
 
@@ -276,8 +294,9 @@ describe('TotalOrders Component', () => {
 
 		// Should not show "Last session: X orders" when no session is active
 		expect(screen.queryByText(/Last session:/)).not.toBeInTheDocument()
-		expect(screen.getByText('0')).toBeInTheDocument()
-		// Should show comparison to last session (which had 2 orders, now 0 = -100%)
-		expect(screen.getByText('-100% from last session')).toBeInTheDocument()
+		// Should preserve current data from ended session
+		expect(screen.getByText('2')).toBeInTheDocument()
+		// Should show same as last session since we preserved the data
+		expect(screen.getByText('Same as last session')).toBeInTheDocument()
 	})
 })

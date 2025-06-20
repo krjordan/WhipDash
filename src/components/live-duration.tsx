@@ -33,17 +33,13 @@ const GOAL_OPTIONS = [
 ]
 
 export function LiveDuration() {
-	const [duration, setDuration] = React.useState(0) // seconds
-	const [isRunning, setIsRunning] = React.useState(false)
-	const [isStarted, setIsStarted] = React.useState(false)
-	const [isEnded, setIsEnded] = React.useState(false)
+	const [lastSessionDuration, setLastSessionDuration] = React.useState(0)
 	const [goalDuration, setGoalDuration] = React.useState(7200) // default 2 hours
-	const [showModal, setShowModal] = React.useState(false)
 	const [showConfetti, setShowConfetti] = React.useState(false)
 	const [hasReachedGoal, setHasReachedGoal] = React.useState(false)
-	const intervalRef = React.useRef<NodeJS.Timeout | null>(null)
 
 	const {
+		sessionState,
 		startSession,
 		pauseSession,
 		resumeSession,
@@ -51,35 +47,38 @@ export function LiveDuration() {
 		salesGoalState,
 		setSalesGoal,
 		resetSales,
-		resetOrders
+		resetOrders,
+		showSessionModal,
+		openSessionModal,
+		closeSessionModal
 	} = useSession()
 
+	// Reset confetti when session changes
 	React.useEffect(() => {
-		if (isRunning && !isEnded && isStarted) {
-			intervalRef.current = setInterval(() => {
-				setDuration((prev) => prev + 1)
-			}, 1000)
-		} else {
-			if (intervalRef.current) {
-				clearInterval(intervalRef.current)
-				intervalRef.current = null
-			}
+		if (!sessionState.isStarted) {
+			setHasReachedGoal(false)
+			setShowConfetti(false)
 		}
-
-		return () => {
-			if (intervalRef.current) {
-				clearInterval(intervalRef.current)
-			}
-		}
-	}, [isRunning, isEnded, isStarted])
+	}, [sessionState.isStarted])
 
 	// Check for goal completion and trigger confetti
 	React.useEffect(() => {
-		if (isStarted && !isEnded && duration >= goalDuration && !hasReachedGoal) {
+		if (
+			sessionState.isStarted &&
+			!sessionState.isEnded &&
+			sessionState.duration >= goalDuration &&
+			!hasReachedGoal
+		) {
 			setHasReachedGoal(true)
 			setShowConfetti(true)
 		}
-	}, [duration, goalDuration, isStarted, isEnded, hasReachedGoal])
+	}, [
+		sessionState.duration,
+		goalDuration,
+		sessionState.isStarted,
+		sessionState.isEnded,
+		hasReachedGoal
+	])
 
 	const formatTime = (seconds: number) => {
 		const hours = Math.floor(seconds / 3600)
@@ -121,15 +120,11 @@ export function LiveDuration() {
 	}
 
 	const handleShowModal = () => {
-		setShowModal(true)
+		openSessionModal()
 	}
 
 	const handleStartSession = () => {
-		setDuration(0)
-		setIsStarted(true)
-		setIsRunning(true)
-		setIsEnded(false)
-		setShowModal(false)
+		closeSessionModal()
 		setHasReachedGoal(false)
 		setShowConfetti(false)
 		resetSales()
@@ -138,22 +133,18 @@ export function LiveDuration() {
 	}
 
 	const handleTogglePause = () => {
-		if (!isEnded) {
-			const newRunningState = !isRunning
-			setIsRunning(newRunningState)
-			if (newRunningState) {
-				resumeSession()
-			} else {
+		if (!sessionState.isEnded) {
+			if (sessionState.isRunning) {
 				pauseSession()
+			} else {
+				resumeSession()
 			}
 		}
 	}
 
 	const handleEnd = () => {
-		setIsRunning(false)
-		setIsEnded(false)
-		setIsStarted(false)
-		setDuration(0)
+		// Save the current duration as the last completed session
+		setLastSessionDuration(sessionState.duration)
 		setHasReachedGoal(false)
 		setShowConfetti(false)
 		endSession()
@@ -163,13 +154,23 @@ export function LiveDuration() {
 		setShowConfetti(false)
 	}
 
+	// Get the display duration - either current session or last session
+	const getDisplayDuration = () => {
+		if (sessionState.isStarted) {
+			return sessionState.duration // Show current session duration
+		} else if (lastSessionDuration > 0) {
+			return lastSessionDuration // Show last completed session duration
+		}
+		return 0 // Default when no sessions
+	}
+
 	return (
 		<>
 			<Card>
 				<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
 					<CardTitle className="text-sm font-medium">Live Duration</CardTitle>
 					<div className="flex items-center gap-2">
-						{!isStarted ? (
+						{!sessionState.isStarted ? (
 							<Button
 								variant="default"
 								size="sm"
@@ -187,9 +188,11 @@ export function LiveDuration() {
 									size="sm"
 									onClick={handleTogglePause}
 									className="h-8 w-8 p-0"
-									aria-label={isRunning ? 'Pause timer' : 'Resume timer'}
+									aria-label={
+										sessionState.isRunning ? 'Pause timer' : 'Resume timer'
+									}
 								>
-									{isRunning ? (
+									{sessionState.isRunning ? (
 										<Pause className="h-4 w-4" />
 									) : (
 										<Play className="h-4 w-4" />
@@ -209,14 +212,24 @@ export function LiveDuration() {
 					</div>
 				</CardHeader>
 				<CardContent>
-					<div className="text-2xl font-bold">{formatTime(duration)}</div>
+					<div className="text-2xl font-bold">
+						{formatTime(getDisplayDuration())}
+					</div>
 					<p className="text-xs text-muted-foreground mt-1">
-						{getProgressPercentage(duration)}% of goal (
-						{getRemainingTime(duration)} min remaining)
+						{sessionState.isStarted ? (
+							<>
+								{getProgressPercentage(sessionState.duration)}% of goal (
+								{getRemainingTime(sessionState.duration)} min remaining)
+							</>
+						) : lastSessionDuration > 0 ? (
+							<>Last session: {formatTime(lastSessionDuration)}</>
+						) : (
+							'Set up a session to begin tracking'
+						)}
 					</p>
 
 					{/* Session Info */}
-					{isStarted && (
+					{sessionState.isStarted && (
 						<div className="mt-3 mb-2 space-y-2">
 							<div className="flex items-center gap-2 text-xs text-muted-foreground">
 								<Target className="h-3 w-3" />
@@ -226,7 +239,7 @@ export function LiveDuration() {
 					)}
 
 					{/* Progress bar */}
-					{isStarted && (
+					{sessionState.isStarted && (
 						<div className="mt-2">
 							<div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
 								<span>0 min</span>
@@ -235,14 +248,16 @@ export function LiveDuration() {
 							<div className="w-full bg-muted rounded-full h-2">
 								<div
 									role="progressbar"
-									aria-valuenow={getProgressPercentage(duration)}
+									aria-valuenow={getProgressPercentage(sessionState.duration)}
 									aria-valuemin={0}
 									aria-valuemax={100}
 									aria-label="Session progress"
 									className={`h-2 rounded-full transition-all duration-1000 ${getProgressColor(
-										duration
+										sessionState.duration
 									)}`}
-									style={{ width: `${getProgressWidth(duration)}%` }}
+									style={{
+										width: `${getProgressWidth(sessionState.duration)}%`
+									}}
 								/>
 							</div>
 						</div>
@@ -252,21 +267,21 @@ export function LiveDuration() {
 					<div className="flex items-center gap-2 mt-3">
 						<div
 							className={`h-2 w-2 rounded-full ${
-								isEnded
+								sessionState.isEnded
 									? 'bg-gray-500'
-									: isRunning && isStarted
+									: sessionState.isRunning && sessionState.isStarted
 									? 'bg-green-500 animate-pulse'
-									: isStarted
+									: sessionState.isStarted
 									? 'bg-yellow-500'
 									: 'bg-gray-400'
 							}`}
 						/>
 						<span className="text-xs text-muted-foreground">
-							{!isStarted
+							{!sessionState.isStarted
 								? 'Ready to Start'
-								: isEnded
+								: sessionState.isEnded
 								? 'Session Ended'
-								: isRunning
+								: sessionState.isRunning
 								? 'Live'
 								: 'Paused'}
 						</span>
@@ -276,8 +291,10 @@ export function LiveDuration() {
 
 			{/* Session Setup Modal */}
 			<Dialog
-				open={showModal}
-				onOpenChange={setShowModal}
+				open={showSessionModal}
+				onOpenChange={(open) =>
+					open ? openSessionModal() : closeSessionModal()
+				}
 			>
 				<div className="space-y-6">
 					<DialogHeader>
@@ -327,7 +344,7 @@ export function LiveDuration() {
 					<DialogFooter>
 						<Button
 							variant="outline"
-							onClick={() => setShowModal(false)}
+							onClick={closeSessionModal}
 						>
 							Cancel
 						</Button>

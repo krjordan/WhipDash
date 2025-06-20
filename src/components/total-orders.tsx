@@ -8,6 +8,11 @@ import { useSession } from '@/lib/session-context'
 export function TotalOrders() {
 	const { sessionState, ordersState, shopifyData, refreshShopifyData } =
 		useSession()
+	const [mounted, setMounted] = React.useState(false)
+
+	React.useEffect(() => {
+		setMounted(true)
+	}, [])
 
 	const getTrendingPercentage = () => {
 		if (ordersState.lastSessionOrders === 0) {
@@ -18,6 +23,8 @@ export function TotalOrders() {
 	}
 
 	const getTrendingIcon = () => {
+		if (!mounted) return null
+
 		const percentage = getTrendingPercentage()
 		if (percentage > 0) {
 			return (
@@ -38,6 +45,8 @@ export function TotalOrders() {
 	}
 
 	const formatTrendingText = () => {
+		if (!mounted) return 'Loading...'
+
 		const percentage = getTrendingPercentage()
 		if (ordersState.lastSessionOrders === 0 && ordersState.totalOrders === 0) {
 			return 'No data from last session'
@@ -56,7 +65,8 @@ export function TotalOrders() {
 			<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
 				<CardTitle className="text-sm font-medium">Total Orders</CardTitle>
 				<div className="flex items-center gap-2">
-					{sessionState.isStarted &&
+					{mounted &&
+						sessionState.isStarted &&
 						(shopifyData.lastUpdated || shopifyData.error) && (
 							<button
 								onClick={refreshShopifyData}
@@ -79,9 +89,12 @@ export function TotalOrders() {
 			</CardHeader>
 			<CardContent>
 				<div className="text-2xl font-bold">
-					{sessionState.isStarted &&
-					shopifyData.orderCount > 0 &&
-					!shopifyData.error
+					{!mounted
+						? 0
+						: mounted &&
+						  sessionState.isStarted &&
+						  shopifyData.orderCount > 0 &&
+						  !shopifyData.error
 						? shopifyData.orderCount
 						: ordersState.totalOrders}
 				</div>
@@ -89,14 +102,15 @@ export function TotalOrders() {
 					{getTrendingIcon()}
 					<span aria-label={formatTrendingText()}>{formatTrendingText()}</span>
 				</p>
-				{sessionState.isStarted && (
+				{mounted && sessionState.isStarted && (
 					<div className="mt-2 text-xs text-muted-foreground">
 						Last session: {ordersState.lastSessionOrders} orders
 					</div>
 				)}
 
 				{/* Shopify data status - only show if we have Shopify data or errors */}
-				{sessionState.isStarted &&
+				{mounted &&
+					sessionState.isStarted &&
 					(shopifyData.lastUpdated ||
 						shopifyData.error ||
 						shopifyData.loading) && (
@@ -121,7 +135,8 @@ export function TotalOrders() {
 					)}
 
 				{/* Last updated indicator */}
-				{sessionState.isStarted &&
+				{mounted &&
+					sessionState.isStarted &&
 					shopifyData.lastUpdated &&
 					!shopifyData.error && (
 						<div className="mt-2 text-xs text-muted-foreground">
@@ -130,7 +145,7 @@ export function TotalOrders() {
 					)}
 
 				{/* Error message */}
-				{sessionState.isStarted && shopifyData.error && (
+				{mounted && sessionState.isStarted && shopifyData.error && (
 					<div className="mt-2 p-2 rounded bg-red-50 border border-red-200">
 						<p className="text-xs text-red-600">{shopifyData.error}</p>
 					</div>

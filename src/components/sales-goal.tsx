@@ -10,10 +10,16 @@ export function SalesGoal() {
 	const { sessionState, salesGoalState, shopifyData } = useSession()
 	const [showConfetti, setShowConfetti] = React.useState(false)
 	const [hasReachedSalesGoal, setHasReachedSalesGoal] = React.useState(false)
+	const [mounted, setMounted] = React.useState(false)
+
+	React.useEffect(() => {
+		setMounted(true)
+	}, [])
 
 	// Check for sales goal completion and trigger confetti
 	React.useEffect(() => {
 		if (
+			mounted &&
 			sessionState.isStarted &&
 			sessionState.isRunning &&
 			salesGoalState.currentAmount >= salesGoalState.goalAmount &&
@@ -23,6 +29,7 @@ export function SalesGoal() {
 			setShowConfetti(true)
 		}
 	}, [
+		mounted,
 		salesGoalState.currentAmount,
 		salesGoalState.goalAmount,
 		sessionState.isStarted,
@@ -33,19 +40,22 @@ export function SalesGoal() {
 	// Reset goal tracking when session starts/ends or goal changes
 	React.useEffect(() => {
 		if (
-			!sessionState.isStarted ||
-			salesGoalState.currentAmount < salesGoalState.goalAmount
+			mounted &&
+			(!sessionState.isStarted ||
+				salesGoalState.currentAmount < salesGoalState.goalAmount)
 		) {
 			setHasReachedSalesGoal(false)
 			setShowConfetti(false)
 		}
 	}, [
+		mounted,
 		sessionState.isStarted,
 		salesGoalState.currentAmount,
 		salesGoalState.goalAmount
 	])
 
 	const formatCurrency = (amount: number) => {
+		if (!mounted) return '$0.00'
 		return new Intl.NumberFormat('en-US', {
 			style: 'currency',
 			currency: 'USD'
@@ -68,11 +78,13 @@ export function SalesGoal() {
 	}
 
 	const getProgressPercentage = (current: number, goal: number) => {
+		if (!mounted) return 0
 		const percentage = (current / goal) * 100
 		return Math.floor(percentage * 10) / 10 // One decimal place for precision
 	}
 
 	const getRemainingAmount = (current: number, goal: number) => {
+		if (!mounted) return goal
 		return Math.max(goal - current, 0)
 	}
 
@@ -107,7 +119,7 @@ export function SalesGoal() {
 					</p>
 
 					{/* Goal Info */}
-					{sessionState.isStarted && (
+					{mounted && sessionState.isStarted && (
 						<div className="mt-3 mb-2 space-y-2">
 							<div className="flex items-center gap-2 text-xs text-muted-foreground">
 								<DollarSign className="h-3 w-3" />
@@ -117,7 +129,7 @@ export function SalesGoal() {
 					)}
 
 					{/* Progress bar */}
-					{sessionState.isStarted && (
+					{mounted && sessionState.isStarted && (
 						<div className="mt-2">
 							<div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
 								<span>$0</span>
@@ -152,7 +164,7 @@ export function SalesGoal() {
 					<div className="flex items-center gap-2 mt-3">
 						<div
 							className={`h-2 w-2 rounded-full ${
-								!sessionState.isStarted
+								!mounted || !sessionState.isStarted
 									? 'bg-gray-400'
 									: shopifyData.error
 									? 'bg-red-500'
@@ -166,7 +178,7 @@ export function SalesGoal() {
 							}`}
 						/>
 						<span className="text-xs text-muted-foreground">
-							{!sessionState.isStarted
+							{!mounted || !sessionState.isStarted
 								? 'Waiting for Session'
 								: shopifyData.error
 								? 'Shopify Connection Error'
@@ -183,7 +195,8 @@ export function SalesGoal() {
 					</div>
 
 					{/* Shopify data indicator - only show if we have valid Shopify data */}
-					{sessionState.isStarted &&
+					{mounted &&
+						sessionState.isStarted &&
 						shopifyData.lastUpdated &&
 						!shopifyData.error && (
 							<div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground">
@@ -195,7 +208,7 @@ export function SalesGoal() {
 						)}
 
 					{/* Error message */}
-					{sessionState.isStarted && shopifyData.error && (
+					{mounted && sessionState.isStarted && shopifyData.error && (
 						<div className="mt-2 p-2 rounded bg-red-50 border border-red-200">
 							<p className="text-xs text-red-600">{shopifyData.error}</p>
 						</div>
