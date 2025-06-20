@@ -180,6 +180,7 @@ interface SessionContextType {
 	pauseSession: () => void
 	resumeSession: () => void
 	endSession: () => void
+	editStartTime: (newStartTime: string) => void
 	setSalesGoal: (amount: number) => void
 	addSale: (amount: number) => void
 	resetSales: () => void
@@ -705,6 +706,39 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 		)
 	}
 
+	const editStartTime = (newStartTime: string) => {
+		if (!sessionState.isStarted || !sessionState.sessionId) {
+			toast.error('No active session to edit')
+			return
+		}
+
+		// Validate the new start time
+		const newStartDate = new Date(newStartTime)
+		const now = new Date()
+
+		if (newStartDate > now) {
+			toast.error('Start time cannot be in the future')
+			return
+		}
+
+		// Update the session state with new start time
+		setSessionState((prev) => ({
+			...prev,
+			startTime: newStartTime
+		}))
+
+		// Save to localStorage
+		setStoredData(STORAGE_KEYS.CURRENT_SESSION, {
+			...sessionState,
+			startTime: newStartTime
+		})
+
+		toast.success('Session start time updated', {
+			id: 'start-time-updated',
+			duration: 2000
+		})
+	}
+
 	const setSalesGoal = (amount: number) => {
 		setSalesGoalState((prev) => ({
 			...prev,
@@ -888,6 +922,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 				pauseSession,
 				resumeSession,
 				endSession,
+				editStartTime,
 				setSalesGoal,
 				addSale,
 				resetSales,

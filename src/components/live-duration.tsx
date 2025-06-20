@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { Play, Pause, Square, Target } from 'lucide-react'
+import { Play, Pause, Square, Target, Edit3 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -38,6 +38,9 @@ export function LiveDuration() {
 	const [showConfetti, setShowConfetti] = React.useState(false)
 	const [hasReachedGoal, setHasReachedGoal] = React.useState(false)
 	const [mounted, setMounted] = React.useState(false)
+	const [showEditStartTimeModal, setShowEditStartTimeModal] =
+		React.useState(false)
+	const [editStartTimeValue, setEditStartTimeValue] = React.useState('')
 
 	const {
 		sessionState,
@@ -45,6 +48,7 @@ export function LiveDuration() {
 		pauseSession,
 		resumeSession,
 		endSession,
+		editStartTime,
 		salesGoalState,
 		setSalesGoal,
 		resetSales,
@@ -159,6 +163,35 @@ export function LiveDuration() {
 		setShowConfetti(false)
 	}
 
+	const handleEditStartTime = () => {
+		if (sessionState.startTime) {
+			// Convert ISO string to datetime-local format
+			const date = new Date(sessionState.startTime)
+			const localDateTime = new Date(
+				date.getTime() - date.getTimezoneOffset() * 60000
+			)
+				.toISOString()
+				.slice(0, 16)
+			setEditStartTimeValue(localDateTime)
+		}
+		setShowEditStartTimeModal(true)
+	}
+
+	const handleSaveStartTime = () => {
+		if (editStartTimeValue) {
+			// Convert datetime-local back to ISO string
+			const localDate = new Date(editStartTimeValue)
+			const isoString = localDate.toISOString()
+			editStartTime(isoString)
+			setShowEditStartTimeModal(false)
+		}
+	}
+
+	const handleCancelEditStartTime = () => {
+		setShowEditStartTimeModal(false)
+		setEditStartTimeValue('')
+	}
+
 	// Get the display duration - either current session or last session
 	const getDisplayDuration = () => {
 		if (!mounted) {
@@ -245,6 +278,22 @@ export function LiveDuration() {
 								<Target className="h-3 w-3" />
 								<span>Goal: {formatTime(goalDuration)}</span>
 							</div>
+							{sessionState.startTime && (
+								<div className="flex items-center justify-between text-xs text-muted-foreground">
+									<span>
+										Started: {new Date(sessionState.startTime).toLocaleString()}
+									</span>
+									<Button
+										variant="ghost"
+										size="sm"
+										onClick={handleEditStartTime}
+										className="h-6 w-6 p-0 hover:bg-muted"
+										aria-label="Edit start time"
+									>
+										<Edit3 className="h-3 w-3" />
+									</Button>
+								</div>
+							)}
 						</div>
 					)}
 
@@ -366,6 +415,50 @@ export function LiveDuration() {
 							<Play className="h-4 w-4 mr-1" />
 							Start Session
 						</Button>
+					</DialogFooter>
+				</div>
+			</Dialog>
+
+			{/* Edit Start Time Modal */}
+			<Dialog
+				open={showEditStartTimeModal}
+				onOpenChange={(open) =>
+					open ? setShowEditStartTimeModal(true) : handleCancelEditStartTime()
+				}
+			>
+				<div className="space-y-6">
+					<DialogHeader>
+						<DialogTitle>Edit Session Start Time</DialogTitle>
+						<DialogDescription>
+							Adjust the start time to include orders that occurred before you
+							started the session.
+						</DialogDescription>
+					</DialogHeader>
+
+					<div className="space-y-4">
+						<div className="space-y-2">
+							<Label htmlFor="start-time">Start Time</Label>
+							<Input
+								id="start-time"
+								type="datetime-local"
+								value={editStartTimeValue}
+								onChange={(e) => setEditStartTimeValue(e.target.value)}
+								max={new Date().toISOString().slice(0, 16)}
+							/>
+							<p className="text-xs text-muted-foreground">
+								Start time cannot be in the future
+							</p>
+						</div>
+					</div>
+
+					<DialogFooter>
+						<Button
+							variant="outline"
+							onClick={handleCancelEditStartTime}
+						>
+							Cancel
+						</Button>
+						<Button onClick={handleSaveStartTime}>Save Changes</Button>
 					</DialogFooter>
 				</div>
 			</Dialog>
