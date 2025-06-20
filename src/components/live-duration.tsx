@@ -37,6 +37,7 @@ export function LiveDuration() {
 	const [goalDuration, setGoalDuration] = React.useState(7200) // default 2 hours
 	const [showConfetti, setShowConfetti] = React.useState(false)
 	const [hasReachedGoal, setHasReachedGoal] = React.useState(false)
+	const [mounted, setMounted] = React.useState(false)
 
 	const {
 		sessionState,
@@ -52,6 +53,10 @@ export function LiveDuration() {
 		openSessionModal,
 		closeSessionModal
 	} = useSession()
+
+	React.useEffect(() => {
+		setMounted(true)
+	}, [])
 
 	// Reset confetti when session changes
 	React.useEffect(() => {
@@ -156,6 +161,9 @@ export function LiveDuration() {
 
 	// Get the display duration - either current session or last session
 	const getDisplayDuration = () => {
+		if (!mounted) {
+			return 0 // Always return 0 during SSR to prevent hydration mismatch
+		}
 		if (sessionState.isStarted) {
 			return sessionState.duration // Show current session duration
 		} else if (lastSessionDuration > 0) {
@@ -170,7 +178,7 @@ export function LiveDuration() {
 				<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
 					<CardTitle className="text-sm font-medium">Live Duration</CardTitle>
 					<div className="flex items-center gap-2">
-						{!sessionState.isStarted ? (
+						{!mounted || !sessionState.isStarted ? (
 							<Button
 								variant="default"
 								size="sm"
@@ -216,7 +224,9 @@ export function LiveDuration() {
 						{formatTime(getDisplayDuration())}
 					</div>
 					<p className="text-xs text-muted-foreground mt-1">
-						{sessionState.isStarted ? (
+						{!mounted ? (
+							'Set up a session to begin tracking'
+						) : mounted && sessionState.isStarted ? (
 							<>
 								{getProgressPercentage(sessionState.duration)}% of goal (
 								{getRemainingTime(sessionState.duration)} min remaining)
@@ -229,7 +239,7 @@ export function LiveDuration() {
 					</p>
 
 					{/* Session Info */}
-					{sessionState.isStarted && (
+					{mounted && sessionState.isStarted && (
 						<div className="mt-3 mb-2 space-y-2">
 							<div className="flex items-center gap-2 text-xs text-muted-foreground">
 								<Target className="h-3 w-3" />
@@ -239,7 +249,7 @@ export function LiveDuration() {
 					)}
 
 					{/* Progress bar */}
-					{sessionState.isStarted && (
+					{mounted && sessionState.isStarted && (
 						<div className="mt-2">
 							<div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
 								<span>0 min</span>
@@ -267,7 +277,9 @@ export function LiveDuration() {
 					<div className="flex items-center gap-2 mt-3">
 						<div
 							className={`h-2 w-2 rounded-full ${
-								sessionState.isEnded
+								!mounted
+									? 'bg-gray-400'
+									: sessionState.isEnded
 									? 'bg-gray-500'
 									: sessionState.isRunning && sessionState.isStarted
 									? 'bg-green-500 animate-pulse'
@@ -277,7 +289,9 @@ export function LiveDuration() {
 							}`}
 						/>
 						<span className="text-xs text-muted-foreground">
-							{!sessionState.isStarted
+							{!mounted
+								? 'Loading...'
+								: !sessionState.isStarted
 								? 'Ready to Start'
 								: sessionState.isEnded
 								? 'Session Ended'

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import type { ProductsWithInventoryResponse } from './shopify'
 
 // Types matching our API responses
 export interface OrderTotalsResponse {
@@ -158,5 +159,73 @@ export function getTodayDateRange() {
 	return {
 		start: formatDateForApi(startOfDay),
 		end: formatDateForApi(endOfDay)
+	}
+}
+
+// Hook for fetching products with inventory information
+export function useProducts(options?: {
+	soldOutOnly?: boolean
+	refreshInterval?: number
+	enabled?: boolean
+}) {
+	const [data, setData] = useState<ProductsWithInventoryResponse | null>(null)
+	const [loading, setLoading] = useState(false)
+	const [error, setError] = useState<string | null>(null)
+
+	const fetchProducts = useCallback(async () => {
+		if (options?.enabled === false) return
+
+		setLoading(true)
+		setError(null)
+
+		try {
+			const params = new URLSearchParams()
+
+			if (options?.soldOutOnly) {
+				params.append('sold_out_only', 'true')
+			}
+
+			const url = `/api/products${
+				params.toString() ? `?${params.toString()}` : ''
+			}`
+			const response = await fetch(url)
+
+			if (!response.ok) {
+				const errorData: ApiError = await response.json()
+				throw new Error(errorData.error || 'Failed to fetch products')
+			}
+
+			const result: ProductsWithInventoryResponse = await response.json()
+			setData(result)
+		} catch (err) {
+			const errorMessage =
+				err instanceof Error ? err.message : 'Unknown error occurred'
+			setError(errorMessage)
+			console.error('Error fetching products:', err)
+		} finally {
+			setLoading(false)
+		}
+	}, [options?.soldOutOnly, options?.enabled])
+
+	// Initial fetch - only if enabled
+	useEffect(() => {
+		if (options?.enabled !== false) {
+			fetchProducts()
+		}
+	}, [fetchProducts, options?.enabled])
+
+	// Set up polling if refreshInterval is provided
+	useEffect(() => {
+		if (!options?.refreshInterval || options?.enabled === false) return
+
+		const interval = setInterval(fetchProducts, options.refreshInterval)
+		return () => clearInterval(interval)
+	}, [fetchProducts, options?.refreshInterval, options?.enabled])
+
+	return {
+		data,
+		loading,
+		error,
+		refetch: fetchProducts
 	}
 }

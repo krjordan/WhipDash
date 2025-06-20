@@ -29,6 +29,7 @@ jest.mock('lucide-react', () => ({
 	DollarSign: () => <div data-testid="dollar-sign-icon" />,
 	Target: () => <div data-testid="target-icon" />,
 	Trash2: () => <div data-testid="trash-icon" />,
+	PackageX: () => <div data-testid="package-x-icon" />,
 	TrendingUp: () => <div data-testid="trending-up-icon" />,
 	TrendingDown: () => <div data-testid="trending-down-icon" />,
 	Clock: () => <div data-testid="clock-icon" />,
@@ -120,7 +121,8 @@ describe('Session History Page', () => {
 				],
 				totalOrders: 1,
 				totalSales: 50.0,
-				goalAmount: 100.0
+				goalAmount: 100.0,
+				soldOutProducts: []
 			},
 			{
 				sessionId: 'session_2',
@@ -146,7 +148,8 @@ describe('Session History Page', () => {
 				],
 				totalOrders: 2,
 				totalSales: 200.0,
-				goalAmount: 150.0
+				goalAmount: 150.0,
+				soldOutProducts: []
 			}
 		]
 
@@ -196,7 +199,8 @@ describe('Session History Page', () => {
 			orders: [],
 			totalOrders: i + 1,
 			totalSales: (i + 1) * 50,
-			goalAmount: 100
+			goalAmount: 100,
+			soldOutProducts: []
 		}))
 
 		Object.defineProperty(window, 'localStorage', {
@@ -237,7 +241,8 @@ describe('Session History Page', () => {
 				orders: [],
 				totalOrders: 1,
 				totalSales: 50.0,
-				goalAmount: 100.0
+				goalAmount: 100.0,
+				soldOutProducts: []
 			},
 			{
 				sessionId: 'session_2',
@@ -246,7 +251,8 @@ describe('Session History Page', () => {
 				orders: [],
 				totalOrders: 3,
 				totalSales: 250.0, // This should be the best session
-				goalAmount: 150.0
+				goalAmount: 150.0,
+				soldOutProducts: []
 			},
 			{
 				sessionId: 'session_3',
@@ -255,7 +261,8 @@ describe('Session History Page', () => {
 				orders: [],
 				totalOrders: 2,
 				totalSales: 100.0,
-				goalAmount: 200.0
+				goalAmount: 200.0,
+				soldOutProducts: []
 			}
 		]
 
