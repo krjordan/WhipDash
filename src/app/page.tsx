@@ -1,18 +1,11 @@
 'use client'
-
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle
-} from '@/components/ui/card'
-import { PackageX, Info, Play } from 'lucide-react'
+import { Info, Play } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { LiveDuration } from '@/components/live-duration'
 import { SalesGoal } from '@/components/sales-goal'
 import { TotalOrders } from '@/components/total-orders'
 import { RecentOrders } from '@/components/recent-orders'
+import { SoldOutProducts } from '@/components/sold-out-products'
 import { DashboardLayout } from '@/components/dashboard-layout'
 import { useSession } from '@/lib/session-context'
 import React from 'react'
@@ -101,23 +94,7 @@ function DashboardContent() {
 						<RecentOrders />
 					</div>
 
-					<Card>
-						<CardHeader>
-							<CardTitle className="flex items-center gap-2">
-								<PackageX className="h-5 w-5" />
-								Sold Out Products
-							</CardTitle>
-							<CardDescription>
-								Track products that are out of stock
-							</CardDescription>
-						</CardHeader>
-						<CardContent className="flex items-center justify-center min-h-[300px]">
-							<div className="text-center text-muted-foreground">
-								<PackageX className="h-12 w-12 mx-auto mb-4 opacity-50" />
-								<p className="text-lg font-medium">Coming Soon</p>
-							</div>
-						</CardContent>
-					</Card>
+					<SoldOutProducts />
 				</div>
 			</div>
 		</main>

@@ -7,7 +7,8 @@ import {
 	ShoppingCart,
 	DollarSign,
 	Target,
-	Trash2
+	Trash2,
+	PackageX
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -234,6 +235,41 @@ export function SessionHistory() {
 												</div>
 											</div>
 										</div>
+
+										{/* Sold Out Products */}
+										{session.soldOutProducts &&
+											session.soldOutProducts.length > 0 && (
+												<div className="flex items-center gap-2 mb-3">
+													<PackageX className="h-4 w-4 text-orange-500" />
+													<div className="flex-1">
+														<div className="flex items-center justify-between text-xs">
+															<span className="text-muted-foreground">
+																Products Sold Out
+															</span>
+															<span className="font-medium text-orange-600">
+																{session.soldOutProducts.length}
+															</span>
+														</div>
+														<div className="flex flex-wrap gap-1 mt-1">
+															{session.soldOutProducts
+																.slice(0, 3)
+																.map((product) => (
+																	<span
+																		key={product.id}
+																		className="text-xs bg-orange-50 text-orange-700 px-2 py-1 rounded"
+																	>
+																		{product.title}
+																	</span>
+																))}
+															{session.soldOutProducts.length > 3 && (
+																<span className="text-xs text-muted-foreground">
+																	+{session.soldOutProducts.length - 3} more
+																</span>
+															)}
+														</div>
+													</div>
+												</div>
+											)}
 
 										{/* Performance Comparison */}
 										{comparison.direction !== 'none' && (

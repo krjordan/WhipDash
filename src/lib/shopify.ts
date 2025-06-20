@@ -31,7 +31,7 @@ function getShopifyApi() {
 		shopifyInstance = shopifyApi({
 			apiKey: requiredEnvVars.apiKey!,
 			apiSecretKey: requiredEnvVars.apiSecretKey!,
-			scopes: ['read_orders'],
+			scopes: ['read_orders', 'read_products', 'read_inventory'],
 			hostName: requiredEnvVars.hostName!,
 			apiVersion: LATEST_API_VERSION,
 			isEmbeddedApp: false
@@ -148,4 +148,83 @@ export interface OrderQueryParams {
 	created_at_max?: string
 	fields?: string
 	[key: string]: string | number | undefined
+}
+
+export interface ShopifyVariant {
+	id: string | number
+	title: string
+	price: string
+	sku?: string
+	inventory_item_id: string | number
+	inventory_management?: string
+	inventory_policy?: string
+	created_at: string
+	updated_at: string
+}
+
+export interface ShopifyProduct {
+	id: string | number
+	title: string
+	handle: string
+	created_at: string
+	updated_at: string
+	image?: {
+		id: string | number
+		src: string
+		alt?: string
+	}
+	variants: ShopifyVariant[]
+}
+
+export interface ShopifyProductsResponse {
+	products: ShopifyProduct[]
+}
+
+export interface InventoryLevel {
+	inventory_item_id: string | number
+	location_id: string | number
+	available: number
+}
+
+export interface InventoryLevelsResponse {
+	inventory_levels: InventoryLevel[]
+}
+
+export interface ProductVariantWithInventory {
+	id: string | number
+	title: string
+	price: string
+	sku?: string
+	inventory_item_id: string | number
+	inventory_management?: string
+	inventory_policy?: string
+	inventory_quantity: number
+	is_sold_out: boolean
+	created_at: string
+	updated_at: string
+}
+
+export interface ProductWithInventory {
+	id: string | number
+	title: string
+	handle: string
+	created_at: string
+	updated_at: string
+	image?: {
+		id: string | number
+		src: string
+		alt?: string
+	}
+	variants: ProductVariantWithInventory[]
+	has_sold_out_variants: boolean
+	all_variants_sold_out: boolean
+}
+
+export interface ProductsWithInventoryResponse {
+	products: ProductWithInventory[]
+	total_count: number
+	sold_out_count: number
+	filter: {
+		sold_out_only: boolean
+	}
 }

@@ -47,6 +47,15 @@ interface PersistedOrder {
 	}
 }
 
+interface PersistedSoldOutProduct {
+	id: string | number
+	title: string
+	handle: string
+	soldOutVariantsCount: number
+	totalVariantsCount: number
+	soldOutAt: string // timestamp when detected as sold out
+}
+
 interface SessionHistory {
 	sessionId: string
 	startTime: string
@@ -55,6 +64,7 @@ interface SessionHistory {
 	totalOrders: number
 	totalSales: number
 	goalAmount: number
+	soldOutProducts: PersistedSoldOutProduct[]
 }
 
 // localStorage utilities
@@ -164,6 +174,7 @@ interface SessionContextType {
 		error: string | null
 		lastUpdated: Date | null
 	}
+	currentSessionSoldOutProducts: PersistedSoldOutProduct[]
 	startSession: () => void
 	pauseSession: () => void
 	resumeSession: () => void
@@ -175,6 +186,8 @@ interface SessionContextType {
 	resetOrders: () => void
 	refreshShopifyData: () => void
 	clearOrdersHistory: () => void
+	addSoldOutProduct: (product: PersistedSoldOutProduct) => void
+	resetSoldOutProducts: () => void
 	showSessionModal: boolean
 	openSessionModal: () => void
 	closeSessionModal: () => void
@@ -217,6 +230,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 	// Session modal state
 	const [showSessionModal, setShowSessionModal] = useState(false)
 
+	// Sold out products tracking
+	const [currentSessionSoldOutProducts, setCurrentSessionSoldOutProducts] =
+		useState<PersistedSoldOutProduct[]>([])
+
 	// Duration timer ref
 	const durationTimerRef = useRef<NodeJS.Timeout | null>(null)
 
@@ -242,12 +259,25 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 			null
 		)
 
+		// Ensure soldOutProducts exists in legacy data
+		const normalizedLastSession = lastSessionData
+			? {
+					...lastSessionData,
+					soldOutProducts: lastSessionData.soldOutProducts || []
+			  }
+			: null
+
+		const normalizedHistory = ordersHistory.map((session) => ({
+			...session,
+			soldOutProducts: session.soldOutProducts || []
+		}))
+
 		return {
-			totalOrders: lastSessionData?.totalOrders || 0,
-			lastSessionOrders: lastSessionData?.totalOrders || 0,
-			currentSessionOrders: lastSessionData?.orders || [],
-			lastSessionData,
-			ordersHistory
+			totalOrders: normalizedLastSession?.totalOrders || 0,
+			lastSessionOrders: normalizedLastSession?.totalOrders || 0,
+			currentSessionOrders: normalizedLastSession?.orders || [],
+			lastSessionData: normalizedLastSession,
+			ordersHistory: normalizedHistory
 		}
 	})
 
@@ -279,6 +309,16 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 		enabled: sessionState.isStarted && !isTestEnvironment
 	})
 
+	// Track last update time for Shopify data
+	const [shopifyLastUpdate, setShopifyLastUpdate] = useState<Date | null>(null)
+
+	// Update last update time when Shopify data changes
+	useEffect(() => {
+		if (shopifyOrderData && !shopifyError) {
+			setShopifyLastUpdate(new Date())
+		}
+	}, [shopifyOrderData, shopifyError])
+
 	// Derived shopify data state
 	const shopifyData = {
 		orderCount: shopifyOrderData?.summary?.orderCount || 0,
@@ -286,7 +326,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 		orders: shopifyOrderData?.orders || [], // Include the actual order breakdown data
 		loading: shopifyLoading,
 		error: shopifyError,
-		lastUpdated: shopifyOrderData ? new Date() : null
+		lastUpdated: shopifyLastUpdate
 	}
 
 	// Persist current session to localStorage
@@ -507,6 +547,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 			currentAmount: 0
 		}))
 
+		// Reset sold out products for new session
+		setCurrentSessionSoldOutProducts([])
+
 		// Reset tracking refs when starting a new session
 		previousOrderCount.current = 0
 		previousSalesAmount.current = 0
@@ -557,7 +600,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 				orders: ordersState.currentSessionOrders,
 				totalOrders: finalOrders,
 				totalSales: finalSales,
-				goalAmount: salesGoalState.goalAmount
+				goalAmount: salesGoalState.goalAmount,
+				soldOutProducts: currentSessionSoldOutProducts
 			}
 
 			// Update orders history
@@ -747,6 +791,24 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 		})
 	}
 
+	const addSoldOutProduct = (product: PersistedSoldOutProduct) => {
+		setCurrentSessionSoldOutProducts((prev) => {
+			// Check if product already exists (by id) to avoid duplicates
+			const exists = prev.some((p) => p.id === product.id)
+			if (exists) {
+				// Update existing product
+				return prev.map((p) => (p.id === product.id ? product : p))
+			} else {
+				// Add new product
+				return [...prev, product]
+			}
+		})
+	}
+
+	const resetSoldOutProducts = () => {
+		setCurrentSessionSoldOutProducts([])
+	}
+
 	const openSessionModal = () => {
 		setShowSessionModal(true)
 	}
@@ -762,6 +824,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 				salesGoalState,
 				ordersState,
 				shopifyData,
+				currentSessionSoldOutProducts,
 				startSession,
 				pauseSession,
 				resumeSession,
@@ -773,6 +836,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 				resetOrders,
 				refreshShopifyData,
 				clearOrdersHistory,
+				addSoldOutProduct,
+				resetSoldOutProducts,
 				showSessionModal,
 				openSessionModal,
 				closeSessionModal
