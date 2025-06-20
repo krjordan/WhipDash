@@ -1,5 +1,6 @@
 import React from 'react'
-import { render, screen, act } from '@testing-library/react'
+import { render, act } from '@testing-library/react'
+import { screen } from '@testing-library/dom'
 import userEvent from '@testing-library/user-event'
 import '@testing-library/jest-dom'
 import { LiveDuration } from '../live-duration'
@@ -38,7 +39,7 @@ describe('LiveDuration Component', () => {
 		expect(screen.getByText('Live Duration')).toBeInTheDocument()
 		expect(screen.getByText('0:00')).toBeInTheDocument()
 		expect(
-			screen.getByText((content, element) => {
+			screen.getByText((content: string, element: Element | null) => {
 				return element?.textContent === '0% of goal (120 min remaining)'
 			})
 		).toBeInTheDocument()
@@ -158,7 +159,7 @@ describe('LiveDuration Component', () => {
 
 		// 720 / 7200 = 0.1 = 10.0%
 		expect(
-			screen.getByText((content, element) => {
+			screen.getByText((content: string, element: Element | null) => {
 				return element?.textContent === '10% of goal (108 min remaining)'
 			})
 		).toBeInTheDocument()
@@ -263,7 +264,7 @@ describe('LiveDuration Component', () => {
 
 		// Should show 1 hour (60 minutes) remaining
 		expect(
-			screen.getByText((content, element) => {
+			screen.getByText((content: string, element: Element | null) => {
 				return element?.textContent === '0% of goal (60 min remaining)'
 			})
 		).toBeInTheDocument()
@@ -296,7 +297,7 @@ describe('LiveDuration Component', () => {
 
 		// Progress should show 100% of goal with 0 min remaining
 		expect(
-			screen.getByText((content, element) => {
+			screen.getByText((content: string, element: Element | null) => {
 				return element?.textContent === '100% of goal (0 min remaining)'
 			})
 		).toBeInTheDocument()

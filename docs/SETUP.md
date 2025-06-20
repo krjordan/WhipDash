@@ -1,6 +1,6 @@
-# 🚀 ZestDash Setup Guide
+# 🚀 WhipDash Setup Guide
 
-This guide will walk you through setting up ZestDash with your Shopify store, from creating API credentials to deploying your dashboard.
+This guide will walk you through setting up WhipDash with your Shopify store, from creating API credentials to deploying your dashboard.
 
 ## 📋 Prerequisites
 
@@ -20,7 +20,7 @@ Before you begin, ensure you have:
 3. Click **Develop apps for your store**
 4. If this is your first custom app, click **Allow custom app development**
 5. Click **Create an app**
-6. Enter an app name (e.g., "Sales Dashboard", "ZestDash", etc.)
+6. Enter an app name (e.g., "Sales Dashboard", "WhipDash", etc.)
 7. Click **Create app**
 
 ### Step 2: Configure Admin API Scopes
@@ -54,8 +54,8 @@ Your store domain is your Shopify URL, typically:
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/zestdash.git
-cd zestdash
+git clone https://github.com/yourusername/whipdash.git
+cd whipdash
 
 # Install dependencies
 npm install
@@ -113,7 +113,7 @@ Your dashboard should now be available at [http://localhost:3000](http://localho
 
    - Go to [vercel.com](https://vercel.com) and sign in
    - Click **Import Project**
-   - Select your ZestDash repository
+   - Select your WhipDash repository
    - Click **Deploy**
 
 3. **Configure Environment Variables:**
@@ -183,7 +183,7 @@ HOST_NAME=https://your-app.vercel.app
 
 ### API Rate Limiting
 
-Shopify has API rate limits. ZestDash is designed to stay within these limits:
+Shopify has API rate limits. WhipDash is designed to stay within these limits:
 
 - **REST Admin API**: 40 requests per app per store per minute
 - **GraphQL Admin API**: 1000 points per app per store per minute
@@ -270,8 +270,8 @@ npm run start
 Still having issues? Here's how to get help:
 
 1. **Check our [Troubleshooting Guide](./TROUBLESHOOTING.md)**
-2. **Search [existing issues](https://github.com/yourusername/zestdash/issues)**
-3. **Create a [new issue](https://github.com/yourusername/zestdash/issues/new)** with:
+2. **Search [existing issues](https://github.com/yourusername/whipdash/issues)**
+3. **Create a [new issue](https://github.com/yourusername/whipdash/issues/new)** with:
    - Your setup steps
    - Error messages (remove sensitive data)
    - Environment (OS, Node version, etc.)

@@ -1,5 +1,6 @@
 import React from 'react'
-import { render, screen } from '@testing-library/react'
+import { render } from '@testing-library/react'
+import { screen } from '@testing-library/dom'
 import '@testing-library/jest-dom'
 
 // Create a minimal component that represents just the Sold Out Products card

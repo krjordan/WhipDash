@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-	title: 'ZestDash - Live Sales Dashboard',
+	title: 'WhipDash - Live Sales Dashboard',
 	description:
 		'Open source live sales dashboard built with Next.js and shadcn/ui. Track real-time sales metrics, subscriptions, and user activity.',
 	keywords: [
@@ -28,17 +28,17 @@ export const metadata: Metadata = {
 		'real-time',
 		'metrics'
 	],
-	authors: [{ name: 'ZestDash Team' }],
-	creator: 'ZestDash',
-	publisher: 'ZestDash',
+	authors: [{ name: 'WhipDash Team' }],
+	creator: 'WhipDash',
+	publisher: 'WhipDash',
 	formatDetection: {
 		email: false,
 		address: false,
 		telephone: false
 	},
-	metadataBase: new URL('https://zestdash.vercel.app'),
+	metadataBase: new URL('https://whipdash.vercel.app'),
 	openGraph: {
-		title: 'ZestDash - Live Sales Dashboard',
+		title: 'WhipDash - Live Sales Dashboard',
 		description:
 			'Open source live sales dashboard built with Next.js and shadcn/ui',
 		type: 'website',
